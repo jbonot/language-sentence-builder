@@ -7,9 +7,8 @@ An interactive, selection-based language learning application designed to help n
 The project is structured as a scaffolded monorepo split into two distinct, decoupled layers communicating via a REST API. This setup allows for rapid feature iteration while keeping deployment overhead minimal.
 
 ```text
-my-language-app/
+language-sentence-builder/
 ├── backend/                  # Django (REST API & Database Management)
-│   ├── api/                  # Core logic (Models, Views, Serializers)
-│   └── my_project/           # Project configuration root
+│   └── core/                 # Project configuration root (settings, urls, asgi/wsgi)
 └── frontend/                 # React + Vite (Interactive UI Single Page App)
-    └── src/                  # Components, Hooks, State, and Routing
+    └── src/                  # App entry point and static assets
