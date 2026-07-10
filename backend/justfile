@@ -1,8 +1,13 @@
-# Prepend the venv binaries to the PATH for all recipes
 export PATH := "venv/bin:" + env_var("PATH")
 
-run: migrate
-    python  manage.py runserver
+run: db-up migrate
+    python manage.py runserver
+
+db-up:
+    docker compose up -d
+
+db-down:
+    docker compose down
 
 migrate:
     python manage.py migrate
