@@ -1,0 +1,8 @@
+# Prepend the venv binaries to the PATH for all recipes
+export PATH := "venv/bin:" + env_var("PATH")
+
+run: migrate
+    python  manage.py runserver
+
+migrate:
+    python manage.py migrate
