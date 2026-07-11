@@ -1,3 +1,5 @@
+@import 'tailwindcss';
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -10,6 +12,19 @@
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  /* shadcn/ui token bridge, mapped onto the palette above */
+  --background: var(--bg);
+  --foreground: var(--text-h);
+  --primary: var(--accent);
+  --primary-foreground: #fff;
+  --secondary: var(--code-bg);
+  --secondary-foreground: var(--text-h);
+  --muted: var(--social-bg);
+  --muted-foreground: var(--text);
+  --destructive: #e5484d;
+  --destructive-foreground: #fff;
+  --ring: var(--accent-border);
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -30,6 +45,23 @@
   }
 }
 
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --text: #9ca3af;
@@ -43,6 +75,9 @@
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+
+    --destructive: #f2555a;
+    --ring: var(--accent-border);
   }
 
   #social .button-icon {
