@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type DragEvent, Fragment, useState } from 'react'
 
 import { WordBadge } from '@/components/word-badge'
 import { cn } from '@/lib/utils'
@@ -13,12 +13,41 @@ const UID_MIME_TYPE = 'application/x-dropzone-word-uid'
 
 interface WordDropZoneProps {
   droppedWords: DroppedWord[]
-  onWordDropped: (word: Word) => void
+  onWordDropped: (word: Word, index: number) => void
+  onWordReordered: (uid: string, index: number) => void
   onWordRemoved: (uid: string) => void
 }
 
-export function WordDropZone({ droppedWords, onWordDropped, onWordRemoved }: WordDropZoneProps) {
+function indexForPointer(event: DragEvent, index: number) {
+  const rect = event.currentTarget.getBoundingClientRect()
+  const isAfter = event.clientX - rect.left > rect.width / 2
+  return isAfter ? index + 1 : index
+}
+
+export function WordDropZone({
+  droppedWords,
+  onWordDropped,
+  onWordReordered,
+  onWordRemoved,
+}: WordDropZoneProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false)
+  const [insertionIndex, setInsertionIndex] = useState<number | null>(null)
+
+  const dropAt = (event: DragEvent, index: number) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setIsDraggingOver(false)
+    setInsertionIndex(null)
+
+    const uid = event.dataTransfer.getData(UID_MIME_TYPE)
+    if (uid) {
+      onWordReordered(uid, index)
+      return
+    }
+    const word = event.dataTransfer.getData('application/json')
+    if (!word) return
+    onWordDropped(JSON.parse(word) as Word, index)
+  }
 
   return (
     <div
@@ -28,17 +57,14 @@ export function WordDropZone({ droppedWords, onWordDropped, onWordRemoved }: Wor
           ? 'move'
           : 'copy'
         setIsDraggingOver(true)
+        setInsertionIndex(droppedWords.length)
       }}
-      onDragLeave={() => setIsDraggingOver(false)}
-      onDrop={(event) => {
-        event.preventDefault()
+      onDragLeave={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node)) return
         setIsDraggingOver(false)
-        // A word already in the zone was dropped back onto the zone: nothing to do.
-        if (event.dataTransfer.getData(UID_MIME_TYPE)) return
-        const word = event.dataTransfer.getData('application/json')
-        if (!word) return
-        onWordDropped(JSON.parse(word) as Word)
+        setInsertionIndex(null)
       }}
+      onDrop={(event) => dropAt(event, droppedWords.length)}
       className={cn(
         'flex min-h-32 flex-wrap content-start items-start justify-start gap-2.5 rounded-lg border-2 border-dashed p-4 transition-colors',
         isDraggingOver ? 'border-primary bg-primary/5' : 'border-border bg-muted/30',
@@ -47,24 +73,42 @@ export function WordDropZone({ droppedWords, onWordDropped, onWordRemoved }: Wor
       {droppedWords.length === 0 && (
         <p className="text-sm text-muted-foreground">Drag words here to build a sentence.</p>
       )}
-      {droppedWords.map(({ uid, word }) => (
-        <WordBadge
-          key={uid}
-          word={word}
-          draggable
-          className="cursor-grab active:cursor-grabbing"
-          onDragStart={(event) => {
-            event.dataTransfer.effectAllowed = 'move'
-            event.dataTransfer.setData(UID_MIME_TYPE, uid)
-            event.dataTransfer.setData('application/json', JSON.stringify(word))
-          }}
-          onDragEnd={(event) => {
-            if (event.dataTransfer.dropEffect === 'none') {
-              onWordRemoved(uid)
-            }
-          }}
-        />
+      {droppedWords.map(({ uid, word }, index) => (
+        <Fragment key={uid}>
+          {insertionIndex === index && <InsertionCaret />}
+          <WordBadge
+            word={word}
+            draggable
+            className="cursor-grab active:cursor-grabbing"
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = 'move'
+              event.dataTransfer.setData(UID_MIME_TYPE, uid)
+              event.dataTransfer.setData('application/json', JSON.stringify(word))
+            }}
+            onDragEnd={(event) => {
+              setInsertionIndex(null)
+              if (event.dataTransfer.dropEffect === 'none') {
+                onWordRemoved(uid)
+              }
+            }}
+            onDragOver={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              event.dataTransfer.dropEffect = event.dataTransfer.types.includes(UID_MIME_TYPE)
+                ? 'move'
+                : 'copy'
+              setIsDraggingOver(true)
+              setInsertionIndex(indexForPointer(event, index))
+            }}
+            onDrop={(event) => dropAt(event, indexForPointer(event, index))}
+          />
+        </Fragment>
       ))}
+      {insertionIndex === droppedWords.length && droppedWords.length > 0 && <InsertionCaret />}
     </div>
   )
+}
+
+function InsertionCaret() {
+  return <div className="my-0.5 h-6 w-0.5 shrink-0 self-center rounded-full bg-primary" />
 }

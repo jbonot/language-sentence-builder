@@ -65,8 +65,26 @@ export function Sandbox() {
 
       <WordDropZone
         droppedWords={droppedWords}
-        onWordDropped={(word) =>
-          setDroppedWords((prev) => [...prev, { uid: crypto.randomUUID(), word }])
+        onWordDropped={(word, index) =>
+          setDroppedWords((prev) => [
+            ...prev.slice(0, index),
+            { uid: crypto.randomUUID(), word },
+            ...prev.slice(index),
+          ])
+        }
+        onWordReordered={(uid, index) =>
+          setDroppedWords((prev) => {
+            const currentIndex = prev.findIndex((item) => item.uid === uid)
+            if (currentIndex === -1) return prev
+
+            const withoutItem = prev.filter((item) => item.uid !== uid)
+            const adjustedIndex = index > currentIndex ? index - 1 : index
+            return [
+              ...withoutItem.slice(0, adjustedIndex),
+              prev[currentIndex],
+              ...withoutItem.slice(adjustedIndex),
+            ]
+          })
         }
         onWordRemoved={(uid) =>
           setDroppedWords((prev) => prev.filter((item) => item.uid !== uid))
