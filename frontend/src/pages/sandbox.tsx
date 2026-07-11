@@ -68,6 +68,9 @@ export function Sandbox() {
         onWordDropped={(word) =>
           setDroppedWords((prev) => [...prev, { uid: crypto.randomUUID(), word }])
         }
+        onWordRemoved={(uid) =>
+          setDroppedWords((prev) => prev.filter((item) => item.uid !== uid))
+        }
       />
 
       <div className="flex flex-wrap gap-2.5">

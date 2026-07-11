@@ -9,24 +9,32 @@ export interface DroppedWord {
   word: Word
 }
 
+const UID_MIME_TYPE = 'application/x-dropzone-word-uid'
+
 interface WordDropZoneProps {
   droppedWords: DroppedWord[]
   onWordDropped: (word: Word) => void
+  onWordRemoved: (uid: string) => void
 }
 
-export function WordDropZone({ droppedWords, onWordDropped }: WordDropZoneProps) {
+export function WordDropZone({ droppedWords, onWordDropped, onWordRemoved }: WordDropZoneProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false)
 
   return (
     <div
       onDragOver={(event) => {
         event.preventDefault()
+        event.dataTransfer.dropEffect = event.dataTransfer.types.includes(UID_MIME_TYPE)
+          ? 'move'
+          : 'copy'
         setIsDraggingOver(true)
       }}
       onDragLeave={() => setIsDraggingOver(false)}
       onDrop={(event) => {
         event.preventDefault()
         setIsDraggingOver(false)
+        // A word already in the zone was dropped back onto the zone: nothing to do.
+        if (event.dataTransfer.getData(UID_MIME_TYPE)) return
         const word = event.dataTransfer.getData('application/json')
         if (!word) return
         onWordDropped(JSON.parse(word) as Word)
@@ -40,7 +48,22 @@ export function WordDropZone({ droppedWords, onWordDropped }: WordDropZoneProps)
         <p className="text-sm text-muted-foreground">Drag words here to build a sentence.</p>
       )}
       {droppedWords.map(({ uid, word }) => (
-        <WordBadge key={uid} word={word} />
+        <WordBadge
+          key={uid}
+          word={word}
+          draggable
+          className="cursor-grab active:cursor-grabbing"
+          onDragStart={(event) => {
+            event.dataTransfer.effectAllowed = 'move'
+            event.dataTransfer.setData(UID_MIME_TYPE, uid)
+            event.dataTransfer.setData('application/json', JSON.stringify(word))
+          }}
+          onDragEnd={(event) => {
+            if (event.dataTransfer.dropEffect === 'none') {
+              onWordRemoved(uid)
+            }
+          }}
+        />
       ))}
     </div>
   )
