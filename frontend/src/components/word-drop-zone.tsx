@@ -1,21 +1,15 @@
 import { type DragEvent, Fragment, useState } from 'react'
 
 import { WordBadge } from '@/components/word-badge'
+import { dropEffectForDrag, readDraggedWord, WORD_UID_MIME_TYPE } from '@/lib/word-drag'
 import { cn } from '@/lib/utils'
-import type { Word } from '@/types/word'
-
-export interface DroppedWord {
-  uid: string
-  word: Word
-}
-
-const UID_MIME_TYPE = 'application/x-dropzone-word-uid'
+import type { PlacedWord, Word } from '@/types/word'
 
 interface WordDropZoneProps {
-  droppedWords: DroppedWord[]
-  onWordDropped: (word: Word, index: number) => void
+  droppedWords: PlacedWord[]
+  onWordAdded: (uid: string | null, word: Word, index: number) => void
   onWordReordered: (uid: string, index: number) => void
-  onWordRemoved: (uid: string) => void
+  onWordReleased: (uid: string) => void
 }
 
 function indexForPointer(event: DragEvent, index: number) {
@@ -26,9 +20,9 @@ function indexForPointer(event: DragEvent, index: number) {
 
 export function WordDropZone({
   droppedWords,
-  onWordDropped,
+  onWordAdded,
   onWordReordered,
-  onWordRemoved,
+  onWordReleased,
 }: WordDropZoneProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const [insertionIndex, setInsertionIndex] = useState<number | null>(null)
@@ -39,23 +33,22 @@ export function WordDropZone({
     setIsDraggingOver(false)
     setInsertionIndex(null)
 
-    const uid = event.dataTransfer.getData(UID_MIME_TYPE)
-    if (uid) {
+    const dragged = readDraggedWord(event)
+    if (!dragged) return
+    const { uid, word } = dragged
+
+    if (uid && droppedWords.some((item) => item.uid === uid)) {
       onWordReordered(uid, index)
       return
     }
-    const word = event.dataTransfer.getData('application/json')
-    if (!word) return
-    onWordDropped(JSON.parse(word) as Word, index)
+    onWordAdded(uid, word, index)
   }
 
   return (
     <div
       onDragOver={(event) => {
         event.preventDefault()
-        event.dataTransfer.dropEffect = event.dataTransfer.types.includes(UID_MIME_TYPE)
-          ? 'move'
-          : 'copy'
+        event.dataTransfer.dropEffect = dropEffectForDrag(event)
         setIsDraggingOver(true)
         setInsertionIndex(droppedWords.length)
       }}
@@ -82,21 +75,19 @@ export function WordDropZone({
             className="cursor-grab active:cursor-grabbing"
             onDragStart={(event) => {
               event.dataTransfer.effectAllowed = 'move'
-              event.dataTransfer.setData(UID_MIME_TYPE, uid)
+              event.dataTransfer.setData(WORD_UID_MIME_TYPE, uid)
               event.dataTransfer.setData('application/json', JSON.stringify(word))
             }}
             onDragEnd={(event) => {
               setInsertionIndex(null)
               if (event.dataTransfer.dropEffect === 'none') {
-                onWordRemoved(uid)
+                onWordReleased(uid)
               }
             }}
             onDragOver={(event) => {
               event.preventDefault()
               event.stopPropagation()
-              event.dataTransfer.dropEffect = event.dataTransfer.types.includes(UID_MIME_TYPE)
-                ? 'move'
-                : 'copy'
+              event.dataTransfer.dropEffect = dropEffectForDrag(event)
               setIsDraggingOver(true)
               setInsertionIndex(indexForPointer(event, index))
             }}

@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
 
-import { WordBadge } from '@/components/word-badge'
-import { type DroppedWord, WordDropZone } from '@/components/word-drop-zone'
+import { WordDropZone } from '@/components/word-drop-zone'
+import { WordListPanel } from '@/components/word-list-panel'
+import { WordWorkingSet } from '@/components/word-working-set'
 import { fetchWords } from '@/lib/api'
-import { LANGUAGES, type LanguageCode, type Word } from '@/types/word'
+import { LANGUAGES, type LanguageCode, type PlacedWord, type Word } from '@/types/word'
 
 export function Sandbox() {
   const [language, setLanguage] = useState<LanguageCode>('es')
   const [words, setWords] = useState<Word[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('loading')
-  const [droppedWords, setDroppedWords] = useState<DroppedWord[]>([])
+  const [droppedWords, setDroppedWords] = useState<PlacedWord[]>([])
+  const [workingSet, setWorkingSet] = useState<PlacedWord[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -31,80 +33,82 @@ export function Sandbox() {
     }
   }, [language])
 
+  const handleWordAddedToSentence = (uid: string | null, word: Word, index: number) => {
+    const entry = { uid: uid ?? crypto.randomUUID(), word }
+    setDroppedWords((prev) => [...prev.slice(0, index), entry, ...prev.slice(index)])
+    if (uid) {
+      setWorkingSet((prev) => prev.filter((item) => item.uid !== uid))
+    }
+  }
+
+  const handleWordReordered = (uid: string, index: number) => {
+    setDroppedWords((prev) => {
+      const currentIndex = prev.findIndex((item) => item.uid === uid)
+      if (currentIndex === -1) return prev
+
+      const withoutItem = prev.filter((item) => item.uid !== uid)
+      const adjustedIndex = index > currentIndex ? index - 1 : index
+      return [
+        ...withoutItem.slice(0, adjustedIndex),
+        prev[currentIndex],
+        ...withoutItem.slice(adjustedIndex),
+      ]
+    })
+  }
+
+  const handleWordReleasedFromSentence = (uid: string) => {
+    const entry = droppedWords.find((item) => item.uid === uid)
+    if (!entry) return
+    setDroppedWords((prev) => prev.filter((item) => item.uid !== uid))
+    setWorkingSet((prev) => [...prev, entry])
+  }
+
+  const handleWordAddedToWorkingSet = (uid: string | null, word: Word) => {
+    const entry = { uid: uid ?? crypto.randomUUID(), word }
+    setWorkingSet((prev) => [...prev, entry])
+    if (uid) {
+      setDroppedWords((prev) => prev.filter((item) => item.uid !== uid))
+    }
+  }
+
   return (
-    <section className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-foreground">Sandbox</h1>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          Language
-          <select
-            value={language}
-            onChange={(event) => setLanguage(event.target.value as LanguageCode)}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-          >
-            {LANGUAGES.map((lang) => (
-              <option key={lang.value} value={lang.value}>
-                {lang.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+    <div className="flex h-screen overflow-hidden">
+      <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-y-auto px-6 py-12">
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold text-foreground">Sandbox</h1>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            Language
+            <select
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as LanguageCode)}
+              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+            >
+              {LANGUAGES.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-      {status === 'loading' && (
-        <p className="text-sm text-muted-foreground">Loading words...</p>
-      )}
-      {status === 'error' && (
-        <p className="text-sm text-destructive">
-          Couldn't load words. Is the backend running?
-        </p>
-      )}
-      {status === 'idle' && words.length === 0 && (
-        <p className="text-sm text-muted-foreground">No words for this language yet.</p>
-      )}
-
-      <WordDropZone
-        droppedWords={droppedWords}
-        onWordDropped={(word, index) =>
-          setDroppedWords((prev) => [
-            ...prev.slice(0, index),
-            { uid: crypto.randomUUID(), word },
-            ...prev.slice(index),
-          ])
-        }
-        onWordReordered={(uid, index) =>
-          setDroppedWords((prev) => {
-            const currentIndex = prev.findIndex((item) => item.uid === uid)
-            if (currentIndex === -1) return prev
-
-            const withoutItem = prev.filter((item) => item.uid !== uid)
-            const adjustedIndex = index > currentIndex ? index - 1 : index
-            return [
-              ...withoutItem.slice(0, adjustedIndex),
-              prev[currentIndex],
-              ...withoutItem.slice(adjustedIndex),
-            ]
-          })
-        }
-        onWordRemoved={(uid) =>
-          setDroppedWords((prev) => prev.filter((item) => item.uid !== uid))
-        }
-      />
-
-      <div className="flex flex-wrap gap-2.5">
-        {words.map((word) => (
-          <WordBadge
-            key={word.id}
-            word={word}
-            draggable
-            className="cursor-grab active:cursor-grabbing"
-            onDragStart={(event) => {
-              event.dataTransfer.effectAllowed = 'copy'
-              event.dataTransfer.setData('application/json', JSON.stringify(word))
-            }}
+        <div className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold text-foreground">Sentence</h2>
+          <WordDropZone
+            droppedWords={droppedWords}
+            onWordAdded={handleWordAddedToSentence}
+            onWordReordered={handleWordReordered}
+            onWordReleased={handleWordReleasedFromSentence}
           />
-        ))}
-      </div>
-    </section>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold text-foreground">Working set</h2>
+          <WordWorkingSet words={workingSet} onWordAdded={handleWordAddedToWorkingSet} />
+        </div>
+      </section>
+
+      <WordListPanel words={words} status={status} />
+    </div>
   )
 }

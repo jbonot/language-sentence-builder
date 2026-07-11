@@ -31,3 +31,8 @@ export interface Word {
   language: LanguageCode
   translation: string | null
 }
+
+export interface PlacedWord {
+  uid: string
+  word: Word
+}
