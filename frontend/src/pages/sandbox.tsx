@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { WordBadge } from '@/components/word-badge'
+import { type DroppedWord, WordDropZone } from '@/components/word-drop-zone'
 import { fetchWords } from '@/lib/api'
 import { LANGUAGES, type LanguageCode, type Word } from '@/types/word'
 
@@ -8,6 +9,7 @@ export function Sandbox() {
   const [language, setLanguage] = useState<LanguageCode>('es')
   const [words, setWords] = useState<Word[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('loading')
+  const [droppedWords, setDroppedWords] = useState<DroppedWord[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -61,9 +63,25 @@ export function Sandbox() {
         <p className="text-sm text-muted-foreground">No words for this language yet.</p>
       )}
 
+      <WordDropZone
+        droppedWords={droppedWords}
+        onWordDropped={(word) =>
+          setDroppedWords((prev) => [...prev, { uid: crypto.randomUUID(), word }])
+        }
+      />
+
       <div className="flex flex-wrap gap-2.5">
         {words.map((word) => (
-          <WordBadge key={word.id} word={word} />
+          <WordBadge
+            key={word.id}
+            word={word}
+            draggable
+            className="cursor-grab active:cursor-grabbing"
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = 'copy'
+              event.dataTransfer.setData('application/json', JSON.stringify(word))
+            }}
+          />
         ))}
       </div>
     </section>
