@@ -23,6 +23,8 @@ const wordBadgeVariants = cva(
         conjunction: 'bg-lime-100 text-lime-900 dark:bg-lime-950 dark:text-lime-200',
         article: 'bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-200',
         interjection: 'bg-pink-100 text-pink-900 dark:bg-pink-950 dark:text-pink-200',
+        prefix: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200',
+        suffix: 'bg-fuchsia-100 text-fuchsia-900 dark:bg-fuchsia-950 dark:text-fuchsia-200',
         other: 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-200',
       },
     },
@@ -91,7 +93,7 @@ export function WordBadge({ word, category, className, ...props }: WordBadgeProp
           {word.text}
         </Badge>
       </TooltipTrigger>
-      <TooltipContent>{word.translation}</TooltipContent>
+      {word.translation && <TooltipContent>{word.translation}</TooltipContent>}
     </Tooltip>
   )
 }

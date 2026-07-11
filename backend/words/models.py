@@ -12,6 +12,8 @@ class Word(models.Model):
         CONJUNCTION = 'conjunction', 'Conjunction'
         ARTICLE = 'article', 'Article'
         INTERJECTION = 'interjection', 'Interjection'
+        PREFIX = 'prefix', 'Prefix'
+        SUFFIX = 'suffix', 'Suffix'
         OTHER = 'other', 'Other'
 
     class Language(models.TextChoices):
@@ -26,7 +28,9 @@ class Word(models.Model):
     text = models.CharField(max_length=100)
     category = models.CharField(max_length=20, choices=Category.choices)
     language = models.CharField(max_length=10, choices=Language.choices)
-    translation = models.CharField(max_length=100, help_text='English translation of the word.')
+    translation = models.CharField(
+        max_length=100, null=True, blank=True, help_text='English translation of the word, if any.'
+    )
 
     class Meta:
         ordering = ['language', 'category', 'text']

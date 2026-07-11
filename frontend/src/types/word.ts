@@ -20,6 +20,8 @@ export type WordCategory =
   | 'conjunction'
   | 'article'
   | 'interjection'
+  | 'prefix'
+  | 'suffix'
   | 'other'
 
 export interface Word {
@@ -27,5 +29,5 @@ export interface Word {
   text: string
   category: WordCategory
   language: LanguageCode
-  translation: string
+  translation: string | null
 }
