@@ -1,9 +1,13 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import type * as React from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { Word } from '@/types/word'
+
+const LONG_PRESS_MS = 500
 
 const wordBadgeVariants = cva(
   'rounded-full border-2 border-transparent px-3.5 py-1.5 text-sm font-semibold tracking-wide shadow-sm transition-transform duration-150 cursor-default hover:-translate-y-0.5 hover:shadow-md',
@@ -35,13 +39,59 @@ export interface WordBadgeProps
 }
 
 export function WordBadge({ word, category, className, ...props }: WordBadgeProps) {
+  const [open, setOpen] = useState(false)
+  const longPressTimer = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current !== null) {
+        window.clearTimeout(longPressTimer.current)
+      }
+    }
+  }, [])
+
+  const clearLongPress = () => {
+    if (longPressTimer.current !== null) {
+      window.clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
   return (
-    <Badge
-      title={word.translation}
-      className={cn(wordBadgeVariants({ category: category ?? word.category }), className)}
-      {...props}
-    >
-      {word.text}
-    </Badge>
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger asChild>
+        <Badge
+          tabIndex={0}
+          className={cn(
+            wordBadgeVariants({ category: category ?? word.category }),
+            'select-none [-webkit-touch-callout:none]',
+            className,
+          )}
+          {...props}
+          onTouchStart={(event) => {
+            props.onTouchStart?.(event)
+            longPressTimer.current = window.setTimeout(() => setOpen(true), LONG_PRESS_MS)
+          }}
+          onTouchEnd={(event) => {
+            props.onTouchEnd?.(event)
+            clearLongPress()
+            setOpen(false)
+          }}
+          onTouchMove={(event) => {
+            props.onTouchMove?.(event)
+            clearLongPress()
+            setOpen(false)
+          }}
+          onTouchCancel={(event) => {
+            props.onTouchCancel?.(event)
+            clearLongPress()
+            setOpen(false)
+          }}
+        >
+          {word.text}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent>{word.translation}</TooltipContent>
+    </Tooltip>
   )
 }
