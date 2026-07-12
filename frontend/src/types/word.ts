@@ -10,19 +10,22 @@ export const LANGUAGES = [
 
 export type LanguageCode = (typeof LANGUAGES)[number]['value']
 
-export type WordCategory =
-  | 'noun'
-  | 'verb'
-  | 'adjective'
-  | 'adverb'
-  | 'pronoun'
-  | 'preposition'
-  | 'conjunction'
-  | 'article'
-  | 'interjection'
-  | 'prefix'
-  | 'suffix'
-  | 'other'
+export const WORD_CATEGORIES = [
+  'noun',
+  'verb',
+  'adjective',
+  'adverb',
+  'pronoun',
+  'preposition',
+  'conjunction',
+  'article',
+  'interjection',
+  'prefix',
+  'suffix',
+  'other',
+] as const
+
+export type WordCategory = (typeof WORD_CATEGORIES)[number]
 
 export interface Word {
   id: number

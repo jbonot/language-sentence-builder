@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
-import { WordBadge } from '@/components/word-badge'
+import { WordBadge, wordBadgeVariants } from '@/components/word-badge'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import type { Word } from '@/types/word'
+import { WORD_CATEGORIES, type Word, type WordCategory } from '@/types/word'
 
 interface WordListPanelProps {
   words: Word[]
@@ -11,6 +12,37 @@ interface WordListPanelProps {
 
 export function WordListPanel({ words, status }: WordListPanelProps) {
   const [isOpen, setIsOpen] = useState(true)
+  const [query, setQuery] = useState('')
+  const [activeCategories, setActiveCategories] = useState<Set<WordCategory>>(new Set())
+
+  const availableCategories = useMemo(
+    () => WORD_CATEGORIES.filter((category) => words.some((word) => word.category === category)),
+    [words],
+  )
+
+  const filteredWords = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+    return words.filter((word) => {
+      const matchesCategory = activeCategories.size === 0 || activeCategories.has(word.category)
+      const matchesQuery =
+        normalizedQuery === '' ||
+        word.text.toLowerCase().includes(normalizedQuery) ||
+        (word.translation?.toLowerCase().includes(normalizedQuery) ?? false)
+      return matchesCategory && matchesQuery
+    })
+  }, [words, query, activeCategories])
+
+  const toggleCategory = (category: WordCategory) => {
+    setActiveCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(category)) {
+        next.delete(category)
+      } else {
+        next.add(category)
+      }
+      return next
+    })
+  }
 
   return (
     <aside
@@ -35,7 +67,7 @@ export function WordListPanel({ words, status }: WordListPanelProps) {
       </div>
 
       {isOpen && (
-        <div className="flex flex-col gap-2 overflow-y-auto p-3 pt-0">
+        <div className="flex flex-col gap-3 overflow-y-auto p-3 pt-0">
           {status === 'loading' && (
             <p className="text-sm text-muted-foreground">Loading words...</p>
           )}
@@ -47,8 +79,53 @@ export function WordListPanel({ words, status }: WordListPanelProps) {
           {status === 'idle' && words.length === 0 && (
             <p className="text-sm text-muted-foreground">No words for this language yet.</p>
           )}
+          {status === 'idle' && words.length > 0 && (
+            <>
+              <Input
+                type="search"
+                placeholder="Search words..."
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                aria-label="Search words"
+              />
+              {availableCategories.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {availableCategories.map((category) => {
+                    const isActive = activeCategories.has(category)
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => toggleCategory(category)}
+                        aria-pressed={isActive}
+                        className={cn(
+                          wordBadgeVariants({ category }),
+                          'cursor-pointer px-2.5 py-1 text-xs',
+                          activeCategories.size > 0 && !isActive && 'opacity-40',
+                        )}
+                      >
+                        {category}
+                      </button>
+                    )
+                  })}
+                  {activeCategories.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategories(new Set())}
+                      className="rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+          {status === 'idle' && words.length > 0 && filteredWords.length === 0 && (
+            <p className="text-sm text-muted-foreground">No words match your search.</p>
+          )}
           <div className="flex flex-wrap gap-2.5">
-            {words.map((word) => (
+            {filteredWords.map((word) => (
               <WordBadge
                 key={word.id}
                 word={word}

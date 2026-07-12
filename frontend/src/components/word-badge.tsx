@@ -9,7 +9,7 @@ import type { Word } from '@/types/word'
 
 const LONG_PRESS_MS = 500
 
-const wordBadgeVariants = cva(
+export const wordBadgeVariants = cva(
   'rounded-full border-2 border-transparent px-3.5 py-1.5 text-sm font-semibold tracking-wide shadow-sm transition-transform duration-150 cursor-default hover:-translate-y-0.5 hover:shadow-md',
   {
     variants: {
