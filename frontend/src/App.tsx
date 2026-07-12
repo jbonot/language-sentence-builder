@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { LoginPage } from '@/pages/login'
+import { RegisterPage } from '@/pages/register'
 import { Sandbox } from '@/pages/sandbox'
 
 function App() {
@@ -8,6 +10,8 @@ function App() {
     <TooltipProvider delayDuration={1000}>
       <Routes>
         <Route path="/" element={<Sandbox />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
       </Routes>
     </TooltipProvider>
   )

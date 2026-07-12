@@ -67,7 +67,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'words',
+    'accounts',
 ]
+
+AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -90,6 +93,19 @@ CORS_ALLOWED_ORIGINS = [
     ).split(',')
     if origin.strip()
 ]
+
+# Session-cookie auth requires the browser to send cookies cross-origin
+# (Vite dev server and Django run on different ports/hosts).
+CORS_ALLOW_CREDENTIALS = True
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
 
 ROOT_URLCONF = 'core.urls'
 
@@ -140,6 +156,11 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    # Frontend and backend are on different registrable domains in
+    # production, so the session/CSRF cookies must be sent cross-site.
+    # SameSite=None requires Secure, which is only true here (DEBUG=False).
+    SESSION_COOKIE_SAMESITE = 'None'
+    CSRF_COOKIE_SAMESITE = 'None'
 
 
 # Password validation
