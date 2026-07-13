@@ -1,5 +1,7 @@
+import django.db.models.deletion
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
-from django.db import migrations
+from django.db import migrations, models
 
 OWNER_EMAIL = 'otis@example.com'
 OWNER_PASSWORD = 'changeme123'
@@ -73,19 +75,20 @@ def seed_otis_monologue(apps, schema_editor):
     UserSettings = apps.get_model('accounts', 'UserSettings')
     WorkingSet = apps.get_model('accounts', 'WorkingSet')
 
-    french_words = []
-    other_words = []
+    french_word_objs = []
     for row in VOCABULARY:
         _, english, category, *_rest = row
         for language, index in LANGUAGE_COLUMNS:
-            word = Word(text=row[index], category=category, language=language, translation=english)
+            text = row[index]
+            word = Word.objects.filter(
+                text=text, category=category, language=language, translation=english,
+            ).first()
+            if word is None:
+                word = Word.objects.create(
+                    text=text, category=category, language=language, translation=english,
+                )
             if language == 'fr':
-                french_words.append(word)
-            else:
-                other_words.append(word)
-
-    created_french_words = Word.objects.bulk_create(french_words)
-    Word.objects.bulk_create(other_words)
+                french_word_objs.append(word)
 
     user = User.objects.create(
         email=OWNER_EMAIL,
@@ -103,7 +106,7 @@ def seed_otis_monologue(apps, schema_editor):
             'category': word.category,
             'translation': word.translation,
         }
-        for word in created_french_words
+        for word in french_word_objs
     ]
 
     WorkingSet.objects.create(
@@ -130,10 +133,34 @@ def unseed_otis_monologue(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0003_alter_sentence_language_alter_usersettings_language_and_more'),
-        ('words', '0006_delete_spanish_words'),
+        ('accounts', '0001_initial'),
+        ('words', '0005_seed_final_vocabulary'),
     ]
 
     operations = [
+        migrations.CreateModel(
+            name='WorkingSet',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=100)),
+                ('language', models.CharField(choices=[('fr', 'French'), ('de', 'German'), ('it', 'Italian'), ('pl', 'Polish'), ('sv', 'Swedish'), ('nl', 'Dutch')], max_length=10)),
+                ('words', models.JSONField()),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='working_sets', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'ordering': ['-created_at'],
+            },
+        ),
+        migrations.AlterField(
+            model_name='sentence',
+            name='language',
+            field=models.CharField(choices=[('fr', 'French'), ('de', 'German'), ('it', 'Italian'), ('pl', 'Polish'), ('sv', 'Swedish'), ('nl', 'Dutch')], max_length=10),
+        ),
+        migrations.AlterField(
+            model_name='usersettings',
+            name='language',
+            field=models.CharField(blank=True, choices=[('fr', 'French'), ('de', 'German'), ('it', 'Italian'), ('pl', 'Polish'), ('sv', 'Swedish'), ('nl', 'Dutch')], default=None, max_length=10, null=True),
+        ),
         migrations.RunPython(seed_otis_monologue, unseed_otis_monologue),
     ]
