@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from .models import Sentence, User, UserSettings
+from .models import Sentence, User, UserSettings, WorkingSet
 
 
 @admin.register(User)
@@ -32,4 +32,10 @@ class UserSettingsAdmin(admin.ModelAdmin):
 @admin.register(Sentence)
 class SentenceAdmin(admin.ModelAdmin):
     list_display = ('id', 'owner', 'language', 'created_at')
+    list_filter = ('language',)
+
+
+@admin.register(WorkingSet)
+class WorkingSetAdmin(admin.ModelAdmin):
+    list_display = ('id', 'owner', 'name', 'language', 'created_at')
     list_filter = ('language',)

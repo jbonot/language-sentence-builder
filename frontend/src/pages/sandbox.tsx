@@ -18,10 +18,12 @@ import { WordBadge } from '@/components/word-badge'
 import { WordDropZone } from '@/components/word-drop-zone'
 import { WordListPanel } from '@/components/word-list-panel'
 import { WordWorkingSet } from '@/components/word-working-set'
+import { WorkingSetsPanel } from '@/components/working-sets-panel'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/auth-context'
 import { fetchWords } from '@/lib/api'
-import { createSentence } from '@/lib/auth-api'
+import { createSentence, createWorkingSet } from '@/lib/auth-api'
 import {
   insertionIndexForDrag,
   placedDraggableId,
@@ -29,6 +31,7 @@ import {
   WORKING_SET_DROPPABLE_ID,
   type DraggableWordData,
 } from '@/lib/word-drag'
+import type { SavedWorkingSet } from '@/types/auth'
 import { LANGUAGES, type LanguageCode, type PlacedWord, type Word } from '@/types/word'
 
 export function Sandbox() {
@@ -39,6 +42,8 @@ export function Sandbox() {
   const [droppedWords, setDroppedWords] = useState<PlacedWord[]>([])
   const [workingSet, setWorkingSet] = useState<PlacedWord[]>([])
   const [sentencesRefreshKey, setSentencesRefreshKey] = useState(0)
+  const [workingSetsRefreshKey, setWorkingSetsRefreshKey] = useState(0)
+  const [workingSetName, setWorkingSetName] = useState('')
   const [activeDrag, setActiveDrag] = useState<DraggableWordData | null>(null)
 
   const sensors = useSensors(
@@ -93,6 +98,43 @@ export function Sandbox() {
       })),
     )
     setSentencesRefreshKey((prev) => prev + 1)
+  }
+
+  const handleSaveWorkingSet = async () => {
+    const name = workingSetName.trim()
+    if (!name || workingSet.length === 0) return
+    await createWorkingSet(
+      name,
+      language,
+      workingSet.map(({ word }) => ({
+        wordId: word.id,
+        text: word.text,
+        category: word.category,
+        translation: word.translation,
+      })),
+    )
+    setWorkingSetName('')
+    setWorkingSetsRefreshKey((prev) => prev + 1)
+  }
+
+  const handleLoadWorkingSet = (saved: SavedWorkingSet) => {
+    if (workingSet.length > 0) {
+      const confirmed = window.confirm('Loading will replace your current working set. Continue?')
+      if (!confirmed) return
+    }
+    setLanguage(saved.language)
+    setWorkingSet(
+      saved.words.map((snapshot) => ({
+        uid: crypto.randomUUID(),
+        word: {
+          id: snapshot.wordId ?? -1,
+          text: snapshot.text,
+          category: snapshot.category,
+          translation: snapshot.translation,
+          language: saved.language,
+        },
+      })),
+    )
   }
 
   const handleWordAddedToSentence = (uid: string | null, word: Word, index: number) => {
@@ -224,11 +266,32 @@ export function Sandbox() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <h2 className="text-sm font-semibold text-foreground">Working set</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">Working set</h2>
+              {user && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={workingSetName}
+                    onChange={(event) => setWorkingSetName(event.target.value)}
+                    placeholder="Working set name"
+                    className="w-40"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={workingSet.length === 0 || !workingSetName.trim()}
+                    onClick={handleSaveWorkingSet}
+                  >
+                    Save working set
+                  </Button>
+                </div>
+              )}
+            </div>
             <WordWorkingSet words={workingSet} />
           </div>
 
           <SavedSentencesPanel refreshKey={sentencesRefreshKey} />
+          <WorkingSetsPanel refreshKey={workingSetsRefreshKey} onLoad={handleLoadWorkingSet} />
         </section>
 
         <WordListPanel words={words} status={status} />

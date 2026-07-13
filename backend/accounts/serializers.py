@@ -3,9 +3,10 @@ from rest_framework import serializers
 
 from words.models import Word
 
-from .models import Sentence, User, UserSettings
+from .models import Sentence, User, UserSettings, WorkingSet
 
 MAX_SENTENCE_WORDS = 50
+MAX_WORKING_SET_WORDS = MAX_SENTENCE_WORDS
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -40,7 +41,7 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 
-class SentenceWordSerializer(serializers.Serializer):
+class WordSnapshotSerializer(serializers.Serializer):
     wordId = serializers.IntegerField(required=False, allow_null=True)
     text = serializers.CharField(allow_blank=False)
     category = serializers.ChoiceField(choices=Word.Category.choices)
@@ -48,7 +49,7 @@ class SentenceWordSerializer(serializers.Serializer):
 
 
 class SentenceSerializer(serializers.ModelSerializer):
-    words = SentenceWordSerializer(many=True)
+    words = WordSnapshotSerializer(many=True)
 
     class Meta:
         model = Sentence
@@ -61,5 +62,29 @@ class SentenceSerializer(serializers.ModelSerializer):
         if len(value) > MAX_SENTENCE_WORDS:
             raise serializers.ValidationError(
                 f'A sentence cannot contain more than {MAX_SENTENCE_WORDS} words.'
+            )
+        return value
+
+
+class WorkingSetSerializer(serializers.ModelSerializer):
+    words = WordSnapshotSerializer(many=True)
+
+    class Meta:
+        model = WorkingSet
+        fields = ['id', 'name', 'language', 'words', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+    def validate_name(self, value):
+        name = value.strip()
+        if not name:
+            raise serializers.ValidationError('A working set needs a name.')
+        return name
+
+    def validate_words(self, value):
+        if not value:
+            raise serializers.ValidationError('A working set must contain at least one word.')
+        if len(value) > MAX_WORKING_SET_WORDS:
+            raise serializers.ValidationError(
+                f'A working set cannot contain more than {MAX_WORKING_SET_WORDS} words.'
             )
         return value

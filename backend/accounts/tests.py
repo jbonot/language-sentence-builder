@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from .models import Sentence, User, UserSettings
+from .models import Sentence, User, UserSettings, WorkingSet
 
 WORD_PAYLOAD = [{'text': 'gato', 'category': 'noun', 'translation': 'cat'}]
 
@@ -116,6 +116,65 @@ class SentenceTests(APITestCase):
     def test_sentences_require_auth(self):
         self.client.force_authenticate(user=None)
         response = self.client.get('/api/sentences/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class WorkingSetTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email='j@example.com', password='a-strong-password-1')
+        self.other_user = User.objects.create_user(email='k@example.com', password='a-strong-password-1')
+        self.client.force_authenticate(user=self.user)
+
+    def test_create_and_list_working_set(self):
+        response = self.client.post(
+            '/api/working-sets/',
+            {'name': 'Restaurant words', 'language': 'es', 'words': WORD_PAYLOAD},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        listing = self.client.get('/api/working-sets/')
+        self.assertEqual(len(listing.data), 1)
+        self.assertEqual(listing.data[0]['name'], 'Restaurant words')
+
+    def test_create_rejects_empty_words(self):
+        response = self.client.post(
+            '/api/working-sets/', {'name': 'Empty', 'language': 'es', 'words': []}, format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_rejects_blank_name(self):
+        response = self.client.post(
+            '/api/working-sets/', {'name': '  ', 'language': 'es', 'words': WORD_PAYLOAD}, format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_rejects_too_many_words(self):
+        words = [{'text': f'word{i}', 'category': 'noun', 'translation': None} for i in range(51)]
+        response = self.client.post(
+            '/api/working-sets/', {'name': 'Big set', 'language': 'es', 'words': words}, format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_own_working_set(self):
+        working_set = WorkingSet.objects.create(
+            owner=self.user, name='Mine', language='es', words=WORD_PAYLOAD
+        )
+        response = self.client.delete(f'/api/working-sets/{working_set.id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(WorkingSet.objects.filter(id=working_set.id).exists())
+
+    def test_cannot_delete_other_users_working_set(self):
+        working_set = WorkingSet.objects.create(
+            owner=self.other_user, name='Theirs', language='es', words=WORD_PAYLOAD
+        )
+        response = self.client.delete(f'/api/working-sets/{working_set.id}/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(WorkingSet.objects.filter(id=working_set.id).exists())
+
+    def test_working_sets_require_auth(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get('/api/working-sets/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 

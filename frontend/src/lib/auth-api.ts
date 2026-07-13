@@ -1,5 +1,5 @@
 import { apiFetch, setCsrfToken } from '@/lib/api'
-import type { AuthSettings, MeResponse, SavedSentence, SentenceWordSnapshot } from '@/types/auth'
+import type { AuthSettings, MeResponse, SavedSentence, SavedWorkingSet, WordSnapshot } from '@/types/auth'
 import type { LanguageCode } from '@/types/word'
 
 interface AuthActionResponse {
@@ -55,7 +55,7 @@ export async function listSentences(): Promise<SavedSentence[]> {
 
 export async function createSentence(
   language: LanguageCode,
-  words: SentenceWordSnapshot[],
+  words: WordSnapshot[],
 ): Promise<SavedSentence> {
   return apiFetch<SavedSentence>('/api/sentences/', {
     method: 'POST',
@@ -65,4 +65,23 @@ export async function createSentence(
 
 export async function deleteSentence(id: number): Promise<void> {
   await apiFetch<void>(`/api/sentences/${id}/`, { method: 'DELETE' })
+}
+
+export async function listWorkingSets(): Promise<SavedWorkingSet[]> {
+  return apiFetch<SavedWorkingSet[]>('/api/working-sets/')
+}
+
+export async function createWorkingSet(
+  name: string,
+  language: LanguageCode,
+  words: WordSnapshot[],
+): Promise<SavedWorkingSet> {
+  return apiFetch<SavedWorkingSet>('/api/working-sets/', {
+    method: 'POST',
+    body: JSON.stringify({ name, language, words }),
+  })
+}
+
+export async function deleteWorkingSet(id: number): Promise<void> {
+  await apiFetch<void>(`/api/working-sets/${id}/`, { method: 'DELETE' })
 }

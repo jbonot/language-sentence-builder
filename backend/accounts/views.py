@@ -5,13 +5,14 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Sentence, User, UserSettings
+from .models import Sentence, User, UserSettings, WorkingSet
 from .serializers import (
     LoginSerializer,
     RegisterSerializer,
     SentenceSerializer,
     UserSerializer,
     UserSettingsSerializer,
+    WorkingSetSerializer,
 )
 
 
@@ -99,6 +100,22 @@ class SentenceViewSet(
 
     def get_queryset(self):
         return Sentence.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+class WorkingSetViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    permission_classes = [IsAuthenticated]
+    serializer_class = WorkingSetSerializer
+
+    def get_queryset(self):
+        return WorkingSet.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)

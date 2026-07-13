@@ -9,7 +9,7 @@ export interface AuthSettings {
   language: LanguageCode | null
 }
 
-export interface SentenceWordSnapshot {
+export interface WordSnapshot {
   wordId: number | null
   text: string
   category: WordCategory
@@ -19,7 +19,15 @@ export interface SentenceWordSnapshot {
 export interface SavedSentence {
   id: number
   language: LanguageCode
-  words: SentenceWordSnapshot[]
+  words: WordSnapshot[]
+  created_at: string
+}
+
+export interface SavedWorkingSet {
+  id: number
+  name: string
+  language: LanguageCode
+  words: WordSnapshot[]
   created_at: string
 }
 
