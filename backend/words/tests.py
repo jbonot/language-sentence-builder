@@ -6,7 +6,7 @@ from .models import Word
 
 class WordAPITests(APITestCase):
     def setUp(self):
-        self.word = Word.objects.create(text='gato', category='noun', language='es', translation='cat')
+        self.word = Word.objects.create(text='chat', category='noun', language='fr', translation='cat')
 
     def test_list_words(self):
         response = self.client.get('/api/words/')
@@ -16,4 +16,4 @@ class WordAPITests(APITestCase):
     def test_retrieve_word(self):
         response = self.client.get(f'/api/words/{self.word.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['text'], 'gato')
+        self.assertEqual(response.data['text'], 'chat')

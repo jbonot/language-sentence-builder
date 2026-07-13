@@ -88,7 +88,7 @@ class SentenceTests(APITestCase):
 
     def test_create_and_list_sentence(self):
         response = self.client.post(
-            '/api/sentences/', {'language': 'es', 'words': WORD_PAYLOAD}, format='json'
+            '/api/sentences/', {'language': 'fr', 'words': WORD_PAYLOAD}, format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -97,18 +97,18 @@ class SentenceTests(APITestCase):
 
     def test_create_rejects_empty_words(self):
         response = self.client.post(
-            '/api/sentences/', {'language': 'es', 'words': []}, format='json'
+            '/api/sentences/', {'language': 'fr', 'words': []}, format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_own_sentence(self):
-        sentence = Sentence.objects.create(owner=self.user, language='es', words=WORD_PAYLOAD)
+        sentence = Sentence.objects.create(owner=self.user, language='fr', words=WORD_PAYLOAD)
         response = self.client.delete(f'/api/sentences/{sentence.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Sentence.objects.filter(id=sentence.id).exists())
 
     def test_cannot_delete_other_users_sentence(self):
-        sentence = Sentence.objects.create(owner=self.other_user, language='es', words=WORD_PAYLOAD)
+        sentence = Sentence.objects.create(owner=self.other_user, language='fr', words=WORD_PAYLOAD)
         response = self.client.delete(f'/api/sentences/{sentence.id}/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Sentence.objects.filter(id=sentence.id).exists())
@@ -128,7 +128,7 @@ class WorkingSetTests(APITestCase):
     def test_create_and_list_working_set(self):
         response = self.client.post(
             '/api/working-sets/',
-            {'name': 'Restaurant words', 'language': 'es', 'words': WORD_PAYLOAD},
+            {'name': 'Restaurant words', 'language': 'fr', 'words': WORD_PAYLOAD},
             format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -139,26 +139,26 @@ class WorkingSetTests(APITestCase):
 
     def test_create_rejects_empty_words(self):
         response = self.client.post(
-            '/api/working-sets/', {'name': 'Empty', 'language': 'es', 'words': []}, format='json'
+            '/api/working-sets/', {'name': 'Empty', 'language': 'fr', 'words': []}, format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_rejects_blank_name(self):
         response = self.client.post(
-            '/api/working-sets/', {'name': '  ', 'language': 'es', 'words': WORD_PAYLOAD}, format='json'
+            '/api/working-sets/', {'name': '  ', 'language': 'fr', 'words': WORD_PAYLOAD}, format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_rejects_too_many_words(self):
         words = [{'text': f'word{i}', 'category': 'noun', 'translation': None} for i in range(51)]
         response = self.client.post(
-            '/api/working-sets/', {'name': 'Big set', 'language': 'es', 'words': words}, format='json'
+            '/api/working-sets/', {'name': 'Big set', 'language': 'fr', 'words': words}, format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_own_working_set(self):
         working_set = WorkingSet.objects.create(
-            owner=self.user, name='Mine', language='es', words=WORD_PAYLOAD
+            owner=self.user, name='Mine', language='fr', words=WORD_PAYLOAD
         )
         response = self.client.delete(f'/api/working-sets/{working_set.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -166,7 +166,7 @@ class WorkingSetTests(APITestCase):
 
     def test_cannot_delete_other_users_working_set(self):
         working_set = WorkingSet.objects.create(
-            owner=self.other_user, name='Theirs', language='es', words=WORD_PAYLOAD
+            owner=self.other_user, name='Theirs', language='fr', words=WORD_PAYLOAD
         )
         response = self.client.delete(f'/api/working-sets/{working_set.id}/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

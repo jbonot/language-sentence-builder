@@ -36,7 +36,7 @@ import { LANGUAGES, type LanguageCode, type PlacedWord, type Word } from '@/type
 
 export function Sandbox() {
   const { user, settings, status: authStatus, setLanguageSetting } = useAuth()
-  const [language, setLanguage] = useState<LanguageCode>('es')
+  const [language, setLanguage] = useState<LanguageCode>('fr')
   const [words, setWords] = useState<Word[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('loading')
   const [droppedWords, setDroppedWords] = useState<PlacedWord[]>([])
@@ -54,7 +54,7 @@ export function Sandbox() {
 
   useEffect(() => {
     if (authStatus !== 'ready') return
-    setLanguage(settings?.language ?? 'es')
+    setLanguage(settings?.language ?? 'fr')
     // Only resolve the initial language from settings once they're loaded;
     // subsequent changes come from the dropdown, not from re-syncing here.
     // eslint-disable-next-line react-hooks/exhaustive-deps

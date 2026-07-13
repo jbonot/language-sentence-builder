@@ -17,7 +17,6 @@ class Word(models.Model):
         OTHER = 'other', 'Other'
 
     class Language(models.TextChoices):
-        ES = 'es', 'Spanish'
         FR = 'fr', 'French'
         DE = 'de', 'German'
         IT = 'it', 'Italian'
