@@ -22,6 +22,7 @@ import { SaveWorkingSetButton } from '@/components/save-working-set-button'
 import { StarterWorkingSetsPanel } from '@/components/starter-working-sets-panel'
 import { WorkingSetsPanel } from '@/components/working-sets-panel'
 import { Button } from '@/components/ui/button'
+import { confirm } from '@/components/ui/confirm-dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { SaveIcon, TrashIcon } from '@/components/icons'
 import { useAuth } from '@/context/auth-context'
@@ -131,16 +132,26 @@ export function Sandbox() {
     }
   }
 
-  const handleClearSentence = () => {
+  const handleClearSentence = async () => {
     if (droppedWords.length === 0) return
-    const confirmed = window.confirm('Clear all words from your current sentence?')
+    const confirmed = await confirm({
+      title: 'Clear sentence',
+      description: 'Clear all words from your current sentence?',
+      confirmLabel: 'Clear',
+      variant: 'destructive',
+    })
     if (!confirmed) return
     setDroppedWords([])
   }
 
-  const handleClearWorkingSet = () => {
+  const handleClearWorkingSet = async () => {
     if (workingSet.length === 0) return
-    const confirmed = window.confirm('Clear all words from your current working set?')
+    const confirmed = await confirm({
+      title: 'Clear working set',
+      description: 'Clear all words from your current working set?',
+      confirmLabel: 'Clear',
+      variant: 'destructive',
+    })
     if (!confirmed) return
     setWorkingSet([])
   }
@@ -149,9 +160,13 @@ export function Sandbox() {
     setWorkingSet((prev) => prev.filter((item) => item.uid !== uid))
   }
 
-  const handleLoadWorkingSet = (saved: SavedWorkingSet) => {
+  const handleLoadWorkingSet = async (saved: SavedWorkingSet) => {
     if (workingSet.length > 0) {
-      const confirmed = window.confirm('Loading will replace your current working set. Continue?')
+      const confirmed = await confirm({
+        title: 'Replace working set',
+        description: 'Loading will replace your current working set. Continue?',
+        confirmLabel: 'Load',
+      })
       if (!confirmed) return
     }
     setLanguage(saved.language)

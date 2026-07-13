@@ -1,6 +1,7 @@
 import { Routes, Route, Outlet } from 'react-router-dom'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Toaster } from '@/components/ui/toaster'
 import { AboutPage } from '@/pages/about'
 import { LoginPage } from '@/pages/login'
@@ -27,6 +28,7 @@ function App() {
         </Route>
       </Routes>
       <Toaster />
+      <ConfirmDialog />
     </TooltipProvider>
   )
 }
