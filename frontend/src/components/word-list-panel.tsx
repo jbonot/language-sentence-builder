@@ -48,93 +48,95 @@ export function WordListPanel({ words, status, onAddToWorkingSet }: WordListPane
   }
 
   return (
-    <aside
-      className={cn(
-        'flex shrink-0 flex-col border-l border-border bg-background transition-[width] duration-200',
-        isOpen ? 'w-72' : 'w-12',
-      )}
-    >
-      <div className="flex items-center gap-2 p-3">
-        {isOpen && (
-          <h2 className="text-sm font-semibold text-foreground">Word list</h2>
+    <div className="relative h-screen w-72 shrink-0">
+      <aside
+        className={cn(
+          'absolute inset-y-0 right-0 flex flex-col border-l border-border bg-background transition-[width] duration-200',
+          isOpen ? 'w-72' : 'w-12',
         )}
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          aria-label={isOpen ? 'Collapse word list' : 'Expand word list'}
-          aria-expanded={isOpen}
-          className="ml-auto rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <ChevronIcon className={cn('size-4 transition-transform', !isOpen && 'rotate-180')} />
-        </button>
-      </div>
-
-      {isOpen && (
-        <div className="flex flex-col gap-3 overflow-y-auto p-3 pt-0">
-          {status === 'loading' && (
-            <p className="text-sm text-muted-foreground">Loading words...</p>
+      >
+        <div className="flex items-center gap-2 p-3">
+          {isOpen && (
+            <h2 className="text-sm font-semibold text-foreground">Word list</h2>
           )}
-          {status === 'error' && (
-            <p className="text-sm text-destructive">
-              Couldn't load words. Is the backend running?
-            </p>
-          )}
-          {status === 'idle' && words.length === 0 && (
-            <p className="text-sm text-muted-foreground">No words for this language yet.</p>
-          )}
-          {status === 'idle' && words.length > 0 && (
-            <>
-              <Input
-                type="search"
-                placeholder="Search words..."
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                aria-label="Search words"
-              />
-              {availableCategories.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {availableCategories.map((category) => {
-                    const isActive = activeCategories.has(category)
-                    return (
-                      <button
-                        key={category}
-                        type="button"
-                        onClick={() => toggleCategory(category)}
-                        aria-pressed={isActive}
-                        className={cn(
-                          wordBadgeVariants({ category }),
-                          'cursor-pointer px-2.5 py-1 text-xs',
-                          activeCategories.size > 0 && !isActive && 'opacity-40',
-                        )}
-                      >
-                        {category}
-                      </button>
-                    )
-                  })}
-                  {activeCategories.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveCategories(new Set())}
-                      className="rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-          {status === 'idle' && words.length > 0 && filteredWords.length === 0 && (
-            <p className="text-sm text-muted-foreground">No words match your search.</p>
-          )}
-          <div className="flex flex-wrap gap-2.5">
-            {filteredWords.map((word) => (
-              <CatalogWordTile key={word.id} word={word} onAddToWorkingSet={onAddToWorkingSet} />
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            aria-label={isOpen ? 'Collapse word list' : 'Expand word list'}
+            aria-expanded={isOpen}
+            className="ml-auto rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <ChevronIcon className={cn('size-4 transition-transform', !isOpen && 'rotate-180')} />
+          </button>
         </div>
-      )}
-    </aside>
+
+        {isOpen && (
+          <div className="flex flex-col gap-3 overflow-y-auto p-3 pt-0">
+            {status === 'loading' && (
+              <p className="text-sm text-muted-foreground">Loading words...</p>
+            )}
+            {status === 'error' && (
+              <p className="text-sm text-destructive">
+                Couldn't load words. Is the backend running?
+              </p>
+            )}
+            {status === 'idle' && words.length === 0 && (
+              <p className="text-sm text-muted-foreground">No words for this language yet.</p>
+            )}
+            {status === 'idle' && words.length > 0 && (
+              <>
+                <Input
+                  type="search"
+                  placeholder="Search words..."
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  aria-label="Search words"
+                />
+                {availableCategories.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableCategories.map((category) => {
+                      const isActive = activeCategories.has(category)
+                      return (
+                        <button
+                          key={category}
+                          type="button"
+                          onClick={() => toggleCategory(category)}
+                          aria-pressed={isActive}
+                          className={cn(
+                            wordBadgeVariants({ category }),
+                            'cursor-pointer px-2.5 py-1 text-xs',
+                            activeCategories.size > 0 && !isActive && 'opacity-40',
+                          )}
+                        >
+                          {category}
+                        </button>
+                      )
+                    })}
+                    {activeCategories.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveCategories(new Set())}
+                        className="rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+            {status === 'idle' && words.length > 0 && filteredWords.length === 0 && (
+              <p className="text-sm text-muted-foreground">No words match your search.</p>
+            )}
+            <div className="flex flex-wrap gap-2.5">
+              {filteredWords.map((word) => (
+                <CatalogWordTile key={word.id} word={word} onAddToWorkingSet={onAddToWorkingSet} />
+              ))}
+            </div>
+          </div>
+        )}
+      </aside>
+    </div>
   )
 }
 

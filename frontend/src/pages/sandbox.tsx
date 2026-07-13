@@ -254,7 +254,7 @@ export function Sandbox() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveDrag(null)}
     >
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen w-full overflow-hidden">
         <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-y-auto px-6 py-12">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-2xl font-semibold text-foreground">Sandbox</h1>
