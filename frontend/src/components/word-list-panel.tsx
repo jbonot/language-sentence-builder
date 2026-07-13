@@ -1,5 +1,5 @@
 import { useDraggable } from '@dnd-kit/core'
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 
 import { WordBadge, wordBadgeVariants } from '@/components/word-badge'
 import { Input } from '@/components/ui/input'
@@ -137,7 +137,7 @@ export function WordListPanel({ words, status }: WordListPanelProps) {
   )
 }
 
-function CatalogWordTile({ word }: { word: Word }) {
+const CatalogWordTile = memo(function CatalogWordTile({ word }: { word: Word }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: catalogDraggableId(word),
     data: { type: 'catalog', word },
@@ -147,12 +147,12 @@ function CatalogWordTile({ word }: { word: Word }) {
     <WordBadge
       ref={setNodeRef}
       word={word}
-      className={cn('cursor-grab touch-none active:cursor-grabbing', isDragging && 'opacity-40')}
+      className={cn('cursor-grab touch-pan-y active:cursor-grabbing', isDragging && 'opacity-40')}
       {...listeners}
       {...attributes}
     />
   )
-}
+})
 
 function ChevronIcon({ className }: { className?: string }) {
   return (

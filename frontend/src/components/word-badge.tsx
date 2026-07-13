@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 import type { Word } from '@/types/word'
 
 export const wordBadgeVariants = cva(
-  'rounded-full border-2 border-transparent px-3.5 py-1.5 text-sm font-semibold tracking-wide shadow-sm transition-transform duration-150 cursor-default hover:-translate-y-0.5 hover:shadow-md',
+  'rounded-full border-2 border-border/50 px-3.5 py-1.5 text-sm font-semibold tracking-wide transition-transform duration-150 cursor-default hover:-translate-y-0.5 hover:shadow-md',
   {
     variants: {
       category: {
@@ -48,7 +48,7 @@ export interface WordBadgeProps
   onMenuOpenChange?: (open: boolean) => void
 }
 
-export const WordBadge = React.forwardRef<HTMLSpanElement, WordBadgeProps>(
+export const WordBadge = React.memo(React.forwardRef<HTMLSpanElement, WordBadgeProps>(
   ({ word, category, className, onRemove, menuOpen, onMenuOpenChange, ...props }, ref) => {
     const badge = (
       <Badge
@@ -91,5 +91,5 @@ export const WordBadge = React.forwardRef<HTMLSpanElement, WordBadgeProps>(
       </ContextMenu>
     )
   },
-)
+))
 WordBadge.displayName = 'WordBadge'
