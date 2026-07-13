@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import type * as React from 'react'
+import * as React from 'react'
 import { useEffect, useRef, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -40,60 +40,64 @@ export interface WordBadgeProps
   word: Word
 }
 
-export function WordBadge({ word, category, className, ...props }: WordBadgeProps) {
-  const [open, setOpen] = useState(false)
-  const longPressTimer = useRef<number | null>(null)
+export const WordBadge = React.forwardRef<HTMLSpanElement, WordBadgeProps>(
+  ({ word, category, className, ...props }, ref) => {
+    const [open, setOpen] = useState(false)
+    const longPressTimer = useRef<number | null>(null)
 
-  useEffect(() => {
-    return () => {
+    useEffect(() => {
+      return () => {
+        if (longPressTimer.current !== null) {
+          window.clearTimeout(longPressTimer.current)
+        }
+      }
+    }, [])
+
+    const clearLongPress = () => {
       if (longPressTimer.current !== null) {
         window.clearTimeout(longPressTimer.current)
+        longPressTimer.current = null
       }
     }
-  }, [])
 
-  const clearLongPress = () => {
-    if (longPressTimer.current !== null) {
-      window.clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-    }
-  }
-
-  return (
-    <Tooltip open={open} onOpenChange={setOpen}>
-      <TooltipTrigger asChild>
-        <Badge
-          tabIndex={0}
-          className={cn(
-            wordBadgeVariants({ category: category ?? word.category }),
-            'select-none [-webkit-touch-callout:none]',
-            className,
-          )}
-          {...props}
-          onTouchStart={(event) => {
-            props.onTouchStart?.(event)
-            longPressTimer.current = window.setTimeout(() => setOpen(true), LONG_PRESS_MS)
-          }}
-          onTouchEnd={(event) => {
-            props.onTouchEnd?.(event)
-            clearLongPress()
-            setOpen(false)
-          }}
-          onTouchMove={(event) => {
-            props.onTouchMove?.(event)
-            clearLongPress()
-            setOpen(false)
-          }}
-          onTouchCancel={(event) => {
-            props.onTouchCancel?.(event)
-            clearLongPress()
-            setOpen(false)
-          }}
-        >
-          {word.text}
-        </Badge>
-      </TooltipTrigger>
-      {word.translation && <TooltipContent>{word.translation}</TooltipContent>}
-    </Tooltip>
-  )
-}
+    return (
+      <Tooltip open={open} onOpenChange={setOpen}>
+        <TooltipTrigger asChild>
+          <Badge
+            ref={ref}
+            tabIndex={0}
+            className={cn(
+              wordBadgeVariants({ category: category ?? word.category }),
+              'select-none [-webkit-touch-callout:none]',
+              className,
+            )}
+            {...props}
+            onTouchStart={(event) => {
+              props.onTouchStart?.(event)
+              longPressTimer.current = window.setTimeout(() => setOpen(true), LONG_PRESS_MS)
+            }}
+            onTouchEnd={(event) => {
+              props.onTouchEnd?.(event)
+              clearLongPress()
+              setOpen(false)
+            }}
+            onTouchMove={(event) => {
+              props.onTouchMove?.(event)
+              clearLongPress()
+              setOpen(false)
+            }}
+            onTouchCancel={(event) => {
+              props.onTouchCancel?.(event)
+              clearLongPress()
+              setOpen(false)
+            }}
+          >
+            {word.text}
+          </Badge>
+        </TooltipTrigger>
+        {word.translation && <TooltipContent>{word.translation}</TooltipContent>}
+      </Tooltip>
+    )
+  },
+)
+WordBadge.displayName = 'WordBadge'

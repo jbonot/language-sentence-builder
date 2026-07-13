@@ -1,7 +1,9 @@
+import { useDraggable } from '@dnd-kit/core'
 import { useMemo, useState } from 'react'
 
 import { WordBadge, wordBadgeVariants } from '@/components/word-badge'
 import { Input } from '@/components/ui/input'
+import { catalogDraggableId } from '@/lib/word-drag'
 import { cn } from '@/lib/utils'
 import { WORD_CATEGORIES, type Word, type WordCategory } from '@/types/word'
 
@@ -126,21 +128,29 @@ export function WordListPanel({ words, status }: WordListPanelProps) {
           )}
           <div className="flex flex-wrap gap-2.5">
             {filteredWords.map((word) => (
-              <WordBadge
-                key={word.id}
-                word={word}
-                draggable
-                className="cursor-grab active:cursor-grabbing"
-                onDragStart={(event) => {
-                  event.dataTransfer.effectAllowed = 'copy'
-                  event.dataTransfer.setData('application/json', JSON.stringify(word))
-                }}
-              />
+              <CatalogWordTile key={word.id} word={word} />
             ))}
           </div>
         </div>
       )}
     </aside>
+  )
+}
+
+function CatalogWordTile({ word }: { word: Word }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: catalogDraggableId(word),
+    data: { type: 'catalog', word },
+  })
+
+  return (
+    <WordBadge
+      ref={setNodeRef}
+      word={word}
+      className={cn('cursor-grab touch-none active:cursor-grabbing', isDragging && 'opacity-40')}
+      {...listeners}
+      {...attributes}
+    />
   )
 }
 

@@ -1,7 +1,19 @@
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  KeyboardSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core'
 import { useEffect, useState } from 'react'
 
 import { AuthNav } from '@/components/auth-nav'
 import { SavedSentencesPanel } from '@/components/saved-sentences-panel'
+import { WordBadge } from '@/components/word-badge'
 import { WordDropZone } from '@/components/word-drop-zone'
 import { WordListPanel } from '@/components/word-list-panel'
 import { WordWorkingSet } from '@/components/word-working-set'
@@ -9,6 +21,13 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/auth-context'
 import { fetchWords } from '@/lib/api'
 import { createSentence } from '@/lib/auth-api'
+import {
+  insertionIndexForDrag,
+  placedDraggableId,
+  SENTENCE_DROPPABLE_ID,
+  WORKING_SET_DROPPABLE_ID,
+  type DraggableWordData,
+} from '@/lib/word-drag'
 import { LANGUAGES, type LanguageCode, type PlacedWord, type Word } from '@/types/word'
 
 export function Sandbox() {
@@ -19,6 +38,13 @@ export function Sandbox() {
   const [droppedWords, setDroppedWords] = useState<PlacedWord[]>([])
   const [workingSet, setWorkingSet] = useState<PlacedWord[]>([])
   const [sentencesRefreshKey, setSentencesRefreshKey] = useState(0)
+  const [activeDrag, setActiveDrag] = useState<DraggableWordData | null>(null)
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(KeyboardSensor),
+  )
 
   useEffect(() => {
     if (authStatus !== 'ready') return
@@ -106,61 +132,106 @@ export function Sandbox() {
     }
   }
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDrag(event.active.data.current as DraggableWordData)
+  }
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    setActiveDrag(null)
+    const data = active.data.current as DraggableWordData
+
+    if (!over) {
+      if (data.type === 'placed' && droppedWords.some((item) => item.uid === data.uid)) {
+        handleWordReleasedFromSentence(data.uid)
+      }
+      return
+    }
+
+    const isSentenceTarget =
+      over.id === SENTENCE_DROPPABLE_ID ||
+      droppedWords.some((item) => placedDraggableId(item.uid) === over.id)
+
+    if (isSentenceTarget) {
+      const index = insertionIndexForDrag(over, active, droppedWords)
+      if (data.type === 'catalog') {
+        handleWordAddedToSentence(null, data.word, index)
+      } else if (droppedWords.some((item) => item.uid === data.uid)) {
+        handleWordReordered(data.uid, index)
+      } else {
+        handleWordAddedToSentence(data.uid, data.word, index)
+      }
+      return
+    }
+
+    if (over.id === WORKING_SET_DROPPABLE_ID) {
+      if (data.type === 'catalog') {
+        handleWordAddedToWorkingSet(null, data.word)
+      } else if (!workingSet.some((item) => item.uid === data.uid)) {
+        handleWordAddedToWorkingSet(data.uid, data.word)
+      }
+    }
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden">
-      <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-y-auto px-6 py-12">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold text-foreground">Sandbox</h1>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              Language
-              <select
-                value={language}
-                onChange={(event) => handleLanguageChange(event.target.value as LanguageCode)}
-                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-              >
-                {LANGUAGES.map((lang) => (
-                  <option key={lang.value} value={lang.value}>
-                    {lang.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <AuthNav />
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveDrag(null)}
+    >
+      <div className="flex h-screen overflow-hidden">
+        <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-y-auto px-6 py-12">
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-2xl font-semibold text-foreground">Sandbox</h1>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                Language
+                <select
+                  value={language}
+                  onChange={(event) => handleLanguageChange(event.target.value as LanguageCode)}
+                  className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <AuthNav />
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-foreground">Sentence</h2>
-            {user && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={droppedWords.length === 0}
-                onClick={handleSaveSentence}
-              >
-                Save sentence
-              </Button>
-            )}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">Sentence</h2>
+              {user && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={droppedWords.length === 0}
+                  onClick={handleSaveSentence}
+                >
+                  Save sentence
+                </Button>
+              )}
+            </div>
+            <WordDropZone droppedWords={droppedWords} />
           </div>
-          <WordDropZone
-            droppedWords={droppedWords}
-            onWordAdded={handleWordAddedToSentence}
-            onWordReordered={handleWordReordered}
-            onWordReleased={handleWordReleasedFromSentence}
-          />
-        </div>
 
-        <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-foreground">Working set</h2>
-          <WordWorkingSet words={workingSet} onWordAdded={handleWordAddedToWorkingSet} />
-        </div>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-sm font-semibold text-foreground">Working set</h2>
+            <WordWorkingSet words={workingSet} />
+          </div>
 
-        <SavedSentencesPanel refreshKey={sentencesRefreshKey} />
-      </section>
+          <SavedSentencesPanel refreshKey={sentencesRefreshKey} />
+        </section>
 
-      <WordListPanel words={words} status={status} />
-    </div>
+        <WordListPanel words={words} status={status} />
+      </div>
+      <DragOverlay>
+        {activeDrag && <WordBadge word={activeDrag.word} className="cursor-grabbing" />}
+      </DragOverlay>
+    </DndContext>
   )
 }
