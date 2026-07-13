@@ -10,6 +10,12 @@ The project is structured as a scaffolded monorepo split into two distinct, deco
 language-sentence-builder/
 ├── backend/                  # Django (REST API & Database Management)
 │   ├── core/                 # Project configuration root (settings, urls, asgi/wsgi)
-│   └── words/                # Word bank app (models, serializers, views for /api/words/)
-└── frontend/                 # React + Vite (Interactive UI Single Page App)
-    └── src/                  # App entry point and static assets
+│   ├── accounts/              # User accounts app (auth, working sets)
+│   └── words/                 # Word bank app (models, serializers, views for /api/words/)
+└── frontend/                  # React + Vite (Interactive UI Single Page App)
+    └── src/
+        ├── components/        # UI components (word badges, panels, drop zones, etc.)
+        ├── context/            # React context providers (auth, etc.)
+        ├── lib/                # API clients and utilities
+        ├── pages/              # Route-level pages (login, register, about, sandbox)
+        └── types/              # Shared TypeScript types
