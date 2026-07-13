@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { TrashIcon } from '@/components/icons'
 import { useAuth } from '@/context/auth-context'
+import { toast } from '@/hooks/use-toast'
 import { fetchWords } from '@/lib/api'
 import { createSentence, createWorkingSet } from '@/lib/auth-api'
 import {
@@ -186,6 +187,11 @@ export function Sandbox() {
     }
   }
 
+  const handleCatalogWordClick = (word: Word) => {
+    handleWordAddedToWorkingSet(null, word)
+    toast({ description: `Added "${word.text}" to working set` })
+  }
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDrag(event.active.data.current as DraggableWordData)
   }
@@ -310,7 +316,7 @@ export function Sandbox() {
           <WorkingSetsPanel refreshKey={workingSetsRefreshKey} onLoad={handleLoadWorkingSet} />
         </section>
 
-        <WordListPanel words={words} status={status} />
+        <WordListPanel words={words} status={status} onAddToWorkingSet={handleCatalogWordClick} />
       </div>
       <DragOverlay>
         {activeDrag && <WordBadge word={activeDrag.word} className="cursor-grabbing" />}

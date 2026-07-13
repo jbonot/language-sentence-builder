@@ -44,3 +44,12 @@ export function TrashIcon({ className }: { className?: string }) {
     </svg>
   )
 }
+
+export function XIcon({ className }: { className?: string }) {
+  return (
+    <svg {...baseProps(className)}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  )
+}

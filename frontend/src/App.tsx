@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { Toaster } from '@/components/ui/toaster'
 import { AboutPage } from '@/pages/about'
 import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
@@ -15,6 +16,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Routes>
+      <Toaster />
     </TooltipProvider>
   )
 }

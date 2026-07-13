@@ -10,9 +10,10 @@ import { WORD_CATEGORIES, type Word, type WordCategory } from '@/types/word'
 interface WordListPanelProps {
   words: Word[]
   status: 'idle' | 'loading' | 'error'
+  onAddToWorkingSet: (word: Word) => void
 }
 
-export function WordListPanel({ words, status }: WordListPanelProps) {
+export function WordListPanel({ words, status, onAddToWorkingSet }: WordListPanelProps) {
   const [isOpen, setIsOpen] = useState(true)
   const [query, setQuery] = useState('')
   const [activeCategories, setActiveCategories] = useState<Set<WordCategory>>(new Set())
@@ -128,7 +129,7 @@ export function WordListPanel({ words, status }: WordListPanelProps) {
           )}
           <div className="flex flex-wrap gap-2.5">
             {filteredWords.map((word) => (
-              <CatalogWordTile key={word.id} word={word} />
+              <CatalogWordTile key={word.id} word={word} onAddToWorkingSet={onAddToWorkingSet} />
             ))}
           </div>
         </div>
@@ -137,7 +138,13 @@ export function WordListPanel({ words, status }: WordListPanelProps) {
   )
 }
 
-const CatalogWordTile = memo(function CatalogWordTile({ word }: { word: Word }) {
+const CatalogWordTile = memo(function CatalogWordTile({
+  word,
+  onAddToWorkingSet,
+}: {
+  word: Word
+  onAddToWorkingSet: (word: Word) => void
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: catalogDraggableId(word),
     data: { type: 'catalog', word },
@@ -150,6 +157,7 @@ const CatalogWordTile = memo(function CatalogWordTile({ word }: { word: Word }) 
       className={cn('cursor-grab touch-pan-y active:cursor-grabbing', isDragging && 'opacity-40')}
       {...listeners}
       {...attributes}
+      onClick={() => onAddToWorkingSet(word)}
     />
   )
 })

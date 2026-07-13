@@ -60,6 +60,28 @@
   --color-ring: var(--ring);
   --font-sans: var(--sans);
   --font-mono: var(--mono);
+  --animate-toast-in: toast-slide-in 200ms ease-out;
+  --animate-toast-out: toast-fade-out 150ms ease-in;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
