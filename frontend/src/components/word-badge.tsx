@@ -1,13 +1,18 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
-import { useEffect, useRef, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { Word } from '@/types/word'
-
-const LONG_PRESS_MS = 500
 
 export const wordBadgeVariants = cva(
   'rounded-full border-2 border-transparent px-3.5 py-1.5 text-sm font-semibold tracking-wide shadow-sm transition-transform duration-150 cursor-default hover:-translate-y-0.5 hover:shadow-md',
@@ -38,65 +43,52 @@ export interface WordBadgeProps
   extends Omit<React.ComponentProps<typeof Badge>, 'variant' | 'children'>,
     VariantProps<typeof wordBadgeVariants> {
   word: Word
+  onRemove?: () => void
+  menuOpen?: boolean
+  onMenuOpenChange?: (open: boolean) => void
 }
 
 export const WordBadge = React.forwardRef<HTMLSpanElement, WordBadgeProps>(
-  ({ word, category, className, ...props }, ref) => {
-    const [open, setOpen] = useState(false)
-    const longPressTimer = useRef<number | null>(null)
+  ({ word, category, className, onRemove, menuOpen, onMenuOpenChange, ...props }, ref) => {
+    const badge = (
+      <Badge
+        ref={ref}
+        tabIndex={0}
+        className={cn(
+          wordBadgeVariants({ category: category ?? word.category }),
+          'select-none [-webkit-touch-callout:none]',
+          className,
+        )}
+        {...props}
+      >
+        {word.text}
+      </Badge>
+    )
 
-    useEffect(() => {
-      return () => {
-        if (longPressTimer.current !== null) {
-          window.clearTimeout(longPressTimer.current)
-        }
-      }
-    }, [])
+    const withTooltip = (
+      <Tooltip>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
+        {word.translation && <TooltipContent>{word.translation}</TooltipContent>}
+      </Tooltip>
+    )
 
-    const clearLongPress = () => {
-      if (longPressTimer.current !== null) {
-        window.clearTimeout(longPressTimer.current)
-        longPressTimer.current = null
-      }
+    if (!onRemove) {
+      return withTooltip
     }
 
     return (
-      <Tooltip open={open} onOpenChange={setOpen}>
-        <TooltipTrigger asChild>
-          <Badge
-            ref={ref}
-            tabIndex={0}
-            className={cn(
-              wordBadgeVariants({ category: category ?? word.category }),
-              'select-none [-webkit-touch-callout:none]',
-              className,
-            )}
-            {...props}
-            onTouchStart={(event) => {
-              props.onTouchStart?.(event)
-              longPressTimer.current = window.setTimeout(() => setOpen(true), LONG_PRESS_MS)
-            }}
-            onTouchEnd={(event) => {
-              props.onTouchEnd?.(event)
-              clearLongPress()
-              setOpen(false)
-            }}
-            onTouchMove={(event) => {
-              props.onTouchMove?.(event)
-              clearLongPress()
-              setOpen(false)
-            }}
-            onTouchCancel={(event) => {
-              props.onTouchCancel?.(event)
-              clearLongPress()
-              setOpen(false)
-            }}
-          >
-            {word.text}
-          </Badge>
-        </TooltipTrigger>
-        {word.translation && <TooltipContent>{word.translation}</TooltipContent>}
-      </Tooltip>
+      <ContextMenu open={menuOpen} onOpenChange={onMenuOpenChange}>
+        <ContextMenuTrigger>{withTooltip}</ContextMenuTrigger>
+        <ContextMenuContent>
+          {word.translation && (
+            <>
+              <ContextMenuLabel>{word.translation}</ContextMenuLabel>
+              <ContextMenuSeparator />
+            </>
+          )}
+          <ContextMenuItem onSelect={onRemove}>Remove</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     )
   },
 )

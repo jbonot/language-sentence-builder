@@ -124,6 +124,10 @@ export function Sandbox() {
     setWorkingSet([])
   }
 
+  const handleRemoveWordFromWorkingSet = (uid: string) => {
+    setWorkingSet((prev) => prev.filter((item) => item.uid !== uid))
+  }
+
   const handleLoadWorkingSet = (saved: SavedWorkingSet) => {
     if (workingSet.length > 0) {
       const confirmed = window.confirm('Loading will replace your current working set. Continue?')
@@ -299,7 +303,7 @@ export function Sandbox() {
                 </Tooltip>
               </div>
             </div>
-            <WordWorkingSet words={workingSet} />
+            <WordWorkingSet words={workingSet} onRemoveWord={handleRemoveWordFromWorkingSet} />
           </div>
 
           <SavedSentencesPanel refreshKey={sentencesRefreshKey} />
