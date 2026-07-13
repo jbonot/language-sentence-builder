@@ -1,9 +1,12 @@
 from django.contrib.auth import authenticate, login, logout
 from django.middleware.csrf import get_token
 from rest_framework import generics, mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+STARTER_WORKING_SET_NAMES = ['Otis Monologue']
 
 from .models import Sentence, User, UserSettings, WorkingSet
 from .serializers import (
@@ -119,3 +122,9 @@ class WorkingSetViewSet(
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def starter(self, request):
+        queryset = WorkingSet.objects.filter(name__in=STARTER_WORKING_SET_NAMES)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

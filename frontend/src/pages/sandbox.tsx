@@ -18,6 +18,7 @@ import { WordBadge } from '@/components/word-badge'
 import { WordDropZone } from '@/components/word-drop-zone'
 import { WordListPanel } from '@/components/word-list-panel'
 import { WordWorkingSet } from '@/components/word-working-set'
+import { StarterWorkingSetsPanel } from '@/components/starter-working-sets-panel'
 import { WorkingSetsPanel } from '@/components/working-sets-panel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -291,6 +292,7 @@ export function Sandbox() {
           </div>
 
           <SavedSentencesPanel refreshKey={sentencesRefreshKey} />
+          <StarterWorkingSetsPanel onLoad={handleLoadWorkingSet} />
           <WorkingSetsPanel refreshKey={workingSetsRefreshKey} onLoad={handleLoadWorkingSet} />
         </section>
 

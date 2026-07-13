@@ -85,3 +85,7 @@ export async function createWorkingSet(
 export async function deleteWorkingSet(id: number): Promise<void> {
   await apiFetch<void>(`/api/working-sets/${id}/`, { method: 'DELETE' })
 }
+
+export async function listStarterWorkingSets(): Promise<SavedWorkingSet[]> {
+  return apiFetch<SavedWorkingSet[]>('/api/working-sets/starter/')
+}
