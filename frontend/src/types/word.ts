@@ -9,15 +9,19 @@ export const LANGUAGES = [
 
 export type LanguageCode = (typeof LANGUAGES)[number]['value']
 
+// Ordered to walk left-to-right through an English Subject-Verb-Object
+// sentence: article/adjective/noun/pronoun build the subject (and later the
+// object), verb/adverb form the predicate, and preposition/conjunction
+// extend it into further phrases and clauses.
 export const WORD_CATEGORIES = [
-  'noun',
-  'verb',
+  'article',
   'adjective',
-  'adverb',
+  'noun',
   'pronoun',
+  'verb',
+  'adverb',
   'preposition',
   'conjunction',
-  'article',
   'interjection',
   'prefix',
   'suffix',

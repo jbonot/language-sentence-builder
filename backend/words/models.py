@@ -3,14 +3,18 @@ from django.db import models
 
 class Word(models.Model):
     class Category(models.TextChoices):
-        NOUN = 'noun', 'Noun'
-        VERB = 'verb', 'Verb'
+        # Ordered to walk left-to-right through an English Subject-Verb-Object
+        # sentence: article/adjective/noun/pronoun build the subject (and
+        # later the object), verb/adverb form the predicate, and
+        # preposition/conjunction extend it into further phrases and clauses.
+        ARTICLE = 'article', 'Article'
         ADJECTIVE = 'adjective', 'Adjective'
-        ADVERB = 'adverb', 'Adverb'
+        NOUN = 'noun', 'Noun'
         PRONOUN = 'pronoun', 'Pronoun'
+        VERB = 'verb', 'Verb'
+        ADVERB = 'adverb', 'Adverb'
         PREPOSITION = 'preposition', 'Preposition'
         CONJUNCTION = 'conjunction', 'Conjunction'
-        ARTICLE = 'article', 'Article'
         INTERJECTION = 'interjection', 'Interjection'
         PREFIX = 'prefix', 'Prefix'
         SUFFIX = 'suffix', 'Suffix'
