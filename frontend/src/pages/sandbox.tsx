@@ -118,6 +118,13 @@ export function Sandbox() {
     setWorkingSetsRefreshKey((prev) => prev + 1)
   }
 
+  const handleClearWorkingSet = () => {
+    if (workingSet.length === 0) return
+    const confirmed = window.confirm('Clear all words from your current working set?')
+    if (!confirmed) return
+    setWorkingSet([])
+  }
+
   const handleLoadWorkingSet = (saved: SavedWorkingSet) => {
     if (workingSet.length > 0) {
       const confirmed = window.confirm('Loading will replace your current working set. Continue?')
@@ -269,24 +276,34 @@ export function Sandbox() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-foreground">Working set</h2>
-              {user && (
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={workingSetName}
-                    onChange={(event) => setWorkingSetName(event.target.value)}
-                    placeholder="Working set name"
-                    className="w-40"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={workingSet.length === 0 || !workingSetName.trim()}
-                    onClick={handleSaveWorkingSet}
-                  >
-                    Save working set
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {user && (
+                  <>
+                    <Input
+                      value={workingSetName}
+                      onChange={(event) => setWorkingSetName(event.target.value)}
+                      placeholder="Working set name"
+                      className="w-40"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={workingSet.length === 0 || !workingSetName.trim()}
+                      onClick={handleSaveWorkingSet}
+                    >
+                      Save working set
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={workingSet.length === 0}
+                  onClick={handleClearWorkingSet}
+                >
+                  Clear
+                </Button>
+              </div>
             </div>
             <WordWorkingSet words={workingSet} />
           </div>
