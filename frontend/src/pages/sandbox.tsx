@@ -18,10 +18,12 @@ import { WordBadge } from '@/components/word-badge'
 import { WordDropZone } from '@/components/word-drop-zone'
 import { WordListPanel } from '@/components/word-list-panel'
 import { WordWorkingSet } from '@/components/word-working-set'
+import { SaveWorkingSetButton } from '@/components/save-working-set-button'
 import { StarterWorkingSetsPanel } from '@/components/starter-working-sets-panel'
 import { WorkingSetsPanel } from '@/components/working-sets-panel'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { TrashIcon } from '@/components/icons'
 import { useAuth } from '@/context/auth-context'
 import { fetchWords } from '@/lib/api'
 import { createSentence, createWorkingSet } from '@/lib/auth-api'
@@ -44,7 +46,6 @@ export function Sandbox() {
   const [workingSet, setWorkingSet] = useState<PlacedWord[]>([])
   const [sentencesRefreshKey, setSentencesRefreshKey] = useState(0)
   const [workingSetsRefreshKey, setWorkingSetsRefreshKey] = useState(0)
-  const [workingSetName, setWorkingSetName] = useState('')
   const [activeDrag, setActiveDrag] = useState<DraggableWordData | null>(null)
 
   const sensors = useSensors(
@@ -101,9 +102,8 @@ export function Sandbox() {
     setSentencesRefreshKey((prev) => prev + 1)
   }
 
-  const handleSaveWorkingSet = async () => {
-    const name = workingSetName.trim()
-    if (!name || workingSet.length === 0) return
+  const handleSaveWorkingSet = async (name: string) => {
+    if (workingSet.length === 0) return
     await createWorkingSet(
       name,
       language,
@@ -114,7 +114,6 @@ export function Sandbox() {
         translation: word.translation,
       })),
     )
-    setWorkingSetName('')
     setWorkingSetsRefreshKey((prev) => prev + 1)
   }
 
@@ -278,38 +277,32 @@ export function Sandbox() {
               <h2 className="text-sm font-semibold text-foreground">Working set</h2>
               <div className="flex items-center gap-2">
                 {user && (
-                  <>
-                    <Input
-                      value={workingSetName}
-                      onChange={(event) => setWorkingSetName(event.target.value)}
-                      placeholder="Working set name"
-                      className="w-40"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={workingSet.length === 0 || !workingSetName.trim()}
-                      onClick={handleSaveWorkingSet}
-                    >
-                      Save working set
-                    </Button>
-                  </>
+                  <SaveWorkingSetButton
+                    disabled={workingSet.length === 0}
+                    onSave={handleSaveWorkingSet}
+                  />
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={workingSet.length === 0}
-                  onClick={handleClearWorkingSet}
-                >
-                  Clear
-                </Button>
+                <StarterWorkingSetsPanel onLoad={handleLoadWorkingSet} />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={workingSet.length === 0}
+                      onClick={handleClearWorkingSet}
+                    >
+                      <TrashIcon className="size-4" />
+                      Clear
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Remove every word from the working set below.</TooltipContent>
+                </Tooltip>
               </div>
             </div>
             <WordWorkingSet words={workingSet} />
           </div>
 
           <SavedSentencesPanel refreshKey={sentencesRefreshKey} />
-          <StarterWorkingSetsPanel onLoad={handleLoadWorkingSet} />
           <WorkingSetsPanel refreshKey={workingSetsRefreshKey} onLoad={handleLoadWorkingSet} />
         </section>
 

@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
+import { SparklesIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/context/auth-context'
 import { listStarterWorkingSets } from '@/lib/auth-api'
 import type { SavedWorkingSet } from '@/types/auth'
@@ -13,6 +15,8 @@ export function StarterWorkingSetsPanel({ onLoad }: StarterWorkingSetsPanelProps
   const { user } = useAuth()
   const [workingSets, setWorkingSets] = useState<SavedWorkingSet[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!user) {
@@ -28,32 +32,73 @@ export function StarterWorkingSetsPanel({ onLoad }: StarterWorkingSetsPanelProps
       .catch(() => setStatus('error'))
   }, [user])
 
+  useEffect(() => {
+    if (!open) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
   if (!user) return null
   if (status === 'idle' && workingSets.length === 0) return null
 
+  const handleSelect = (workingSet: SavedWorkingSet) => {
+    setOpen(false)
+    onLoad(workingSet)
+  }
+
   return (
-    <div className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-foreground">Starter working sets</h2>
-      {status === 'loading' && <p className="text-sm text-muted-foreground">Loading...</p>}
-      {status === 'error' && (
-        <p className="text-sm text-destructive">Couldn't load starter working sets.</p>
-      )}
-      <ul className="flex flex-col gap-2">
-        {workingSets.map((workingSet) => (
-          <li
-            key={workingSet.id}
-            className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 text-sm"
+    <div ref={containerRef} className="relative">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={status === 'loading'}
+            onClick={() => setOpen((prev) => !prev)}
           >
-            <span>
-              {workingSet.name}{' '}
-              <span className="text-muted-foreground">({workingSet.words.length} words)</span>
-            </span>
-            <Button variant="outline" size="sm" onClick={() => onLoad(workingSet)}>
-              Load
-            </Button>
-          </li>
-        ))}
-      </ul>
+            <SparklesIcon className="size-4" />
+            Starter
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          Load a ready-made starter working set to begin with words already in place.
+        </TooltipContent>
+      </Tooltip>
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-1 min-w-56 rounded-md border border-border bg-background p-1 shadow-md">
+          {status === 'error' && (
+            <p className="px-2 py-1.5 text-sm text-destructive">
+              Couldn't load starter working sets.
+            </p>
+          )}
+          {status !== 'error' &&
+            workingSets.map((workingSet) => (
+              <button
+                key={workingSet.id}
+                type="button"
+                className="block w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted"
+                onClick={() => handleSelect(workingSet)}
+              >
+                {workingSet.name}{' '}
+                <span className="text-muted-foreground">({workingSet.words.length} words)</span>
+              </button>
+            ))}
+        </div>
+      )}
     </div>
   )
 }
