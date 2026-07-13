@@ -10,6 +10,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { AuthNav } from '@/components/auth-nav'
 import { SavedSentencesPanel } from '@/components/saved-sentences-panel'
@@ -198,6 +199,9 @@ export function Sandbox() {
                   ))}
                 </select>
               </label>
+              <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground">
+                About
+              </Link>
               <AuthNav />
             </div>
           </div>
