@@ -23,7 +23,7 @@ import { StarterWorkingSetsPanel } from '@/components/starter-working-sets-panel
 import { WorkingSetsPanel } from '@/components/working-sets-panel'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { TrashIcon } from '@/components/icons'
+import { SaveIcon, TrashIcon } from '@/components/icons'
 import { useAuth } from '@/context/auth-context'
 import { toast } from '@/hooks/use-toast'
 import { fetchWords } from '@/lib/api'
@@ -50,7 +50,7 @@ export function Sandbox() {
   const [activeDrag, setActiveDrag] = useState<DraggableWordData | null>(null)
 
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 1 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
     useSensor(KeyboardSensor),
   )
@@ -118,6 +118,13 @@ export function Sandbox() {
     setWorkingSetsRefreshKey((prev) => prev + 1)
   }
 
+  const handleClearSentence = () => {
+    if (droppedWords.length === 0) return
+    const confirmed = window.confirm('Clear all words from your current sentence?')
+    if (!confirmed) return
+    setDroppedWords([])
+  }
+
   const handleClearWorkingSet = () => {
     if (workingSet.length === 0) return
     const confirmed = window.confirm('Clear all words from your current working set?')
@@ -149,12 +156,9 @@ export function Sandbox() {
     )
   }
 
-  const handleWordAddedToSentence = (uid: string | null, word: Word, index: number) => {
-    const entry = { uid: uid ?? crypto.randomUUID(), word }
+  const handleWordAddedToSentence = (word: Word, index: number) => {
+    const entry = { uid: crypto.randomUUID(), word }
     setDroppedWords((prev) => [...prev.slice(0, index), entry, ...prev.slice(index)])
-    if (uid) {
-      setWorkingSet((prev) => prev.filter((item) => item.uid !== uid))
-    }
   }
 
   const handleWordReordered = (uid: string, index: number) => {
@@ -176,12 +180,16 @@ export function Sandbox() {
     const entry = droppedWords.find((item) => item.uid === uid)
     if (!entry) return
     setDroppedWords((prev) => prev.filter((item) => item.uid !== uid))
-    setWorkingSet((prev) => [...prev, entry])
+    setWorkingSet((prev) =>
+      prev.some((item) => item.word.id === entry.word.id) ? prev : [...prev, entry],
+    )
   }
 
   const handleWordAddedToWorkingSet = (uid: string | null, word: Word) => {
-    const entry = { uid: uid ?? crypto.randomUUID(), word }
-    setWorkingSet((prev) => [...prev, entry])
+    setWorkingSet((prev) => {
+      if (prev.some((item) => item.word.id === word.id)) return prev
+      return [...prev, { uid: uid ?? crypto.randomUUID(), word }]
+    })
     if (uid) {
       setDroppedWords((prev) => prev.filter((item) => item.uid !== uid))
     }
@@ -213,22 +221,16 @@ export function Sandbox() {
 
     if (isSentenceTarget) {
       const index = insertionIndexForDrag(over, active, droppedWords)
-      if (data.type === 'catalog') {
-        handleWordAddedToSentence(null, data.word, index)
-      } else if (droppedWords.some((item) => item.uid === data.uid)) {
+      if (data.type === 'placed' && droppedWords.some((item) => item.uid === data.uid)) {
         handleWordReordered(data.uid, index)
       } else {
-        handleWordAddedToSentence(data.uid, data.word, index)
+        handleWordAddedToSentence(data.word, index)
       }
       return
     }
 
     if (over.id === WORKING_SET_DROPPABLE_ID) {
-      if (data.type === 'catalog') {
-        handleWordAddedToWorkingSet(null, data.word)
-      } else if (!workingSet.some((item) => item.uid === data.uid)) {
-        handleWordAddedToWorkingSet(data.uid, data.word)
-      }
+      handleWordAddedToWorkingSet(data.type === 'placed' ? data.uid : null, data.word)
     }
   }
 
@@ -268,16 +270,38 @@ export function Sandbox() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-foreground">Sentence</h2>
-              {user && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={droppedWords.length === 0}
-                  onClick={handleSaveSentence}
-                >
-                  Save sentence
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {user && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={droppedWords.length === 0}
+                        onClick={handleSaveSentence}
+                      >
+                        <SaveIcon className="size-4" />
+                        Save
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Save the sentence below so you can find it again later.</TooltipContent>
+                  </Tooltip>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={droppedWords.length === 0}
+                      onClick={handleClearSentence}
+                    >
+                      <TrashIcon className="size-4" />
+                      Clear
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Remove every word from the sentence below.</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
             <WordDropZone droppedWords={droppedWords} />
           </div>
@@ -318,7 +342,7 @@ export function Sandbox() {
 
         <WordListPanel words={words} status={status} onAddToWorkingSet={handleCatalogWordClick} />
       </div>
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeDrag && <WordBadge word={activeDrag.word} className="cursor-grabbing" />}
       </DragOverlay>
     </DndContext>
