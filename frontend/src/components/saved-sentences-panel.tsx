@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/auth-context'
+import { toast } from '@/hooks/use-toast'
 import { deleteSentence, listSentences } from '@/lib/auth-api'
 import type { SavedSentence } from '@/types/auth'
 
@@ -27,8 +28,13 @@ export function SavedSentencesPanel({ refreshKey }: { refreshKey: number }) {
   if (!user) return null
 
   const handleDelete = async (id: number) => {
-    await deleteSentence(id)
-    setSentences((prev) => prev.filter((sentence) => sentence.id !== id))
+    try {
+      await deleteSentence(id)
+      setSentences((prev) => prev.filter((sentence) => sentence.id !== id))
+      toast({ description: 'Sentence deleted' })
+    } catch (error) {
+      toast({ description: error instanceof Error ? error.message : 'Failed to delete sentence' })
+    }
   }
 
   return (

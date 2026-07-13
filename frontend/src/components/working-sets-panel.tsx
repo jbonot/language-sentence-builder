@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/auth-context'
+import { toast } from '@/hooks/use-toast'
 import { deleteWorkingSet, listWorkingSets } from '@/lib/auth-api'
 import type { SavedWorkingSet } from '@/types/auth'
 
@@ -32,8 +33,15 @@ export function WorkingSetsPanel({ refreshKey, onLoad }: WorkingSetsPanelProps) 
   if (!user) return null
 
   const handleDelete = async (id: number) => {
-    await deleteWorkingSet(id)
-    setWorkingSets((prev) => prev.filter((workingSet) => workingSet.id !== id))
+    try {
+      await deleteWorkingSet(id)
+      setWorkingSets((prev) => prev.filter((workingSet) => workingSet.id !== id))
+      toast({ description: 'Working set deleted' })
+    } catch (error) {
+      toast({
+        description: error instanceof Error ? error.message : 'Failed to delete working set',
+      })
+    }
   }
 
   return (

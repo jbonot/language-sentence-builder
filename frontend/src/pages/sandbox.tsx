@@ -91,31 +91,44 @@ export function Sandbox() {
   }
 
   const handleSaveSentence = async () => {
-    await createSentence(
-      language,
-      droppedWords.map(({ word }) => ({
-        wordId: word.id,
-        text: word.text,
-        category: word.category,
-        translation: word.translation,
-      })),
-    )
-    setSentencesRefreshKey((prev) => prev + 1)
+    try {
+      await createSentence(
+        language,
+        droppedWords.map(({ word }) => ({
+          wordId: word.id,
+          text: word.text,
+          category: word.category,
+          translation: word.translation,
+        })),
+      )
+      setSentencesRefreshKey((prev) => prev + 1)
+      toast({ description: 'Sentence saved' })
+    } catch (error) {
+      toast({ description: error instanceof Error ? error.message : 'Failed to save sentence' })
+    }
   }
 
   const handleSaveWorkingSet = async (name: string) => {
     if (workingSet.length === 0) return
-    await createWorkingSet(
-      name,
-      language,
-      workingSet.map(({ word }) => ({
-        wordId: word.id,
-        text: word.text,
-        category: word.category,
-        translation: word.translation,
-      })),
-    )
-    setWorkingSetsRefreshKey((prev) => prev + 1)
+    try {
+      await createWorkingSet(
+        name,
+        language,
+        workingSet.map(({ word }) => ({
+          wordId: word.id,
+          text: word.text,
+          category: word.category,
+          translation: word.translation,
+        })),
+      )
+      setWorkingSetsRefreshKey((prev) => prev + 1)
+      toast({ description: 'Working set saved' })
+    } catch (error) {
+      toast({
+        description: error instanceof Error ? error.message : 'Failed to save working set',
+      })
+      throw error
+    }
   }
 
   const handleClearSentence = () => {
