@@ -10,9 +10,8 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 
-import { AuthNav } from '@/components/auth-nav'
+import { NavMenu } from '@/components/nav-menu'
 import { SavedSentencesPanel } from '@/components/saved-sentences-panel'
 import { WordBadge } from '@/components/word-badge'
 import { WordDropZone } from '@/components/word-drop-zone'
@@ -271,28 +270,25 @@ export function Sandbox() {
     >
       <div className="flex h-screen w-full overflow-hidden">
         <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-y-auto px-6 py-12">
-          <div className="flex items-center justify-between gap-4">
-            <h1 className="text-2xl font-semibold text-foreground">Sandbox</h1>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                Language
-                <select
-                  value={language}
-                  onChange={(event) => handleLanguageChange(event.target.value as LanguageCode)}
-                  className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground">
-                About
-              </Link>
-              <AuthNav />
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <NavMenu />
+              <h1 className="text-2xl font-semibold text-foreground">Sandbox</h1>
             </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              Language
+              <select
+                value={language}
+                onChange={(event) => handleLanguageChange(event.target.value as LanguageCode)}
+                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <div className="flex flex-col gap-2">

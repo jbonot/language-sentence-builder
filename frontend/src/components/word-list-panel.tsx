@@ -48,7 +48,12 @@ export function WordListPanel({ words, status, onAddToWorkingSet }: WordListPane
   }
 
   return (
-    <div className="relative h-screen w-72 shrink-0">
+    <div
+      className={cn(
+        'relative h-screen shrink-0 transition-[width] duration-200',
+        isOpen ? 'w-72' : 'w-12',
+      )}
+    >
       <aside
         className={cn(
           'absolute inset-y-0 right-0 flex flex-col border-l border-border bg-background transition-[width] duration-200',
