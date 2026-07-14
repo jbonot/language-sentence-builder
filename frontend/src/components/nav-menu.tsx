@@ -76,7 +76,7 @@ export function NavMenu() {
                   close()
                   logout()
                 }}
-                className={cn(menuItemClass, 'flex items-center gap-2')}
+                className={cn(menuItemClass, 'flex w-full items-center gap-2')}
               >
                 <LogOutIcon className="size-4" />
                 Log out

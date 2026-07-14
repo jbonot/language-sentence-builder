@@ -1,6 +1,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import { memo, useMemo, useState } from 'react'
 
+import { ChevronIcon } from '@/components/icons'
 import { WordBadge, wordBadgeVariants } from '@/components/word-badge'
 import { Input } from '@/components/ui/input'
 import { catalogDraggableId } from '@/lib/word-drag'
@@ -168,20 +169,3 @@ const CatalogWordTile = memo(function CatalogWordTile({
     />
   )
 })
-
-function ChevronIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m9 6 6 6-6 6" />
-    </svg>
-  )
-}
