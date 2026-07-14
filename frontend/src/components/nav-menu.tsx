@@ -68,7 +68,7 @@ export function NavMenu() {
           {user ? (
             <>
               <div className="-mx-1 my-1 h-px bg-border" />
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">{user.email}</div>
+              <div className="px-2 py-1.5 text-xs text-muted-foreground opacity-70">{user.email}</div>
               <button
                 type="button"
                 role="menuitem"
