@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { MenuIcon } from '@/components/icons'
+import { LogOutIcon, MenuIcon } from '@/components/icons'
 import { useAuth } from '@/context/auth-context'
+import { cn } from '@/lib/utils'
 
 const menuItemClass =
   'block rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus:bg-muted focus:text-foreground focus:outline-none'
@@ -66,6 +67,7 @@ export function NavMenu() {
           </Link>
           {user ? (
             <>
+              <div className="-mx-1 my-1 h-px bg-border" />
               <div className="px-2 py-1.5 text-xs text-muted-foreground">{user.email}</div>
               <button
                 type="button"
@@ -74,8 +76,9 @@ export function NavMenu() {
                   close()
                   logout()
                 }}
-                className={menuItemClass}
+                className={cn(menuItemClass, 'flex items-center gap-2')}
               >
+                <LogOutIcon className="size-4" />
                 Log out
               </button>
             </>
