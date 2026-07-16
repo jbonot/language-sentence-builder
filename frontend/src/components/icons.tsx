@@ -6,4 +6,5 @@ export {
   LogOut as LogOutIcon,
   Menu as MenuIcon,
   ChevronRight as ChevronIcon,
+  WifiOff as OfflineIcon,
 } from 'lucide-react'

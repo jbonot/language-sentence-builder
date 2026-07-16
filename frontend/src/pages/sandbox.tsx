@@ -9,7 +9,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { NavMenu } from '@/components/nav-menu'
 import { SavedSentencesPanel } from '@/components/saved-sentences-panel'
@@ -26,8 +26,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { SaveIcon, TrashIcon } from '@/components/icons'
 import { useAuth } from '@/context/auth-context'
 import { toast } from '@/hooks/use-toast'
-import { fetchWords } from '@/lib/api'
-import { createSentence, createWorkingSet } from '@/lib/auth-api'
+import { fetchWordsCached } from '@/lib/cached-reads'
+import { getStored, setStored } from '@/lib/local-store'
+import { createSentenceOffline, createWorkingSetOffline } from '@/lib/offline-write'
 import {
   insertionIndexForDrag,
   placedDraggableId,
@@ -38,13 +39,26 @@ import {
 import type { SavedWorkingSet } from '@/types/auth'
 import { LANGUAGES, type LanguageCode, type PlacedWord, type Word } from '@/types/word'
 
+const DRAFT_KEY = 'sandbox-draft-v1'
+
+interface SandboxDraft {
+  language: LanguageCode
+  droppedWords: PlacedWord[]
+  workingSet: PlacedWord[]
+}
+
+function loadDraft(): SandboxDraft | null {
+  return getStored<SandboxDraft | null>(DRAFT_KEY, null)
+}
+
 export function Sandbox() {
   const { user, settings, status: authStatus, setLanguageSetting } = useAuth()
-  const [language, setLanguage] = useState<LanguageCode>('fr')
+  const [language, setLanguage] = useState<LanguageCode>(() => loadDraft()?.language ?? 'fr')
   const [words, setWords] = useState<Word[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('loading')
-  const [droppedWords, setDroppedWords] = useState<PlacedWord[]>([])
-  const [workingSet, setWorkingSet] = useState<PlacedWord[]>([])
+  const [droppedWords, setDroppedWords] = useState<PlacedWord[]>(() => loadDraft()?.droppedWords ?? [])
+  const [workingSet, setWorkingSet] = useState<PlacedWord[]>(() => loadDraft()?.workingSet ?? [])
+  const hasRestoredDraftRef = useRef(loadDraft() !== null)
   const [sentencesRefreshKey, setSentencesRefreshKey] = useState(0)
   const [workingSetsRefreshKey, setWorkingSetsRefreshKey] = useState(0)
   const [activeDrag, setActiveDrag] = useState<DraggableWordData | null>(null)
@@ -57,6 +71,7 @@ export function Sandbox() {
 
   useEffect(() => {
     if (authStatus !== 'ready') return
+    if (hasRestoredDraftRef.current) return
     setLanguage(settings?.language ?? 'fr')
     // Only resolve the initial language from settings once they're loaded;
     // subsequent changes come from the dropdown, not from re-syncing here.
@@ -64,10 +79,17 @@ export function Sandbox() {
   }, [authStatus])
 
   useEffect(() => {
+    const timeout = setTimeout(() => {
+      setStored<SandboxDraft>(DRAFT_KEY, { language, droppedWords, workingSet })
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [language, droppedWords, workingSet])
+
+  useEffect(() => {
     let cancelled = false
 
     setStatus('loading')
-    fetchWords(language)
+    fetchWordsCached(language)
       .then((data) => {
         if (cancelled) return
         setWords(data)
@@ -92,7 +114,7 @@ export function Sandbox() {
 
   const handleSaveSentence = async () => {
     try {
-      await createSentence(
+      const { queued } = await createSentenceOffline(
         language,
         droppedWords.map(({ word }) => ({
           wordId: word.id,
@@ -102,7 +124,7 @@ export function Sandbox() {
         })),
       )
       setSentencesRefreshKey((prev) => prev + 1)
-      toast({ description: 'Sentence saved' })
+      toast({ description: queued ? 'Saved — will sync once you\'re back online' : 'Sentence saved' })
     } catch (error) {
       toast({ description: error instanceof Error ? error.message : 'Failed to save sentence' })
     }
@@ -111,7 +133,7 @@ export function Sandbox() {
   const handleSaveWorkingSet = async (name: string) => {
     if (workingSet.length === 0) return
     try {
-      await createWorkingSet(
+      const { queued } = await createWorkingSetOffline(
         name,
         language,
         workingSet.map(({ word }) => ({
@@ -122,7 +144,7 @@ export function Sandbox() {
         })),
       )
       setWorkingSetsRefreshKey((prev) => prev + 1)
-      toast({ description: 'Working set saved' })
+      toast({ description: queued ? 'Saved — will sync once you\'re back online' : 'Working set saved' })
     } catch (error) {
       toast({
         description: error instanceof Error ? error.message : 'Failed to save working set',

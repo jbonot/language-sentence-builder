@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { LogOutIcon, MenuIcon } from '@/components/icons'
+import { LogOutIcon, MenuIcon, OfflineIcon } from '@/components/icons'
+import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/context/auth-context'
+import { setOfflineMode, useOfflineMode } from '@/lib/offline-mode'
 import { cn } from '@/lib/utils'
 
 const menuItemClass =
@@ -10,6 +12,7 @@ const menuItemClass =
 
 export function NavMenu() {
   const { user, logout } = useAuth()
+  const offlineMode = useOfflineMode()
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -52,9 +55,13 @@ export function NavMenu() {
         aria-label={isOpen ? 'Close menu' : 'Open menu'}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        className={cn(
+          'relative rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground',
+          offlineMode && 'text-primary',
+        )}
       >
         <MenuIcon className="size-5" />
+        {offlineMode && <OfflineIcon className="absolute -bottom-0.5 -right-0.5 size-3" />}
       </button>
 
       {isOpen && (
@@ -65,6 +72,17 @@ export function NavMenu() {
           <Link ref={firstItemRef} to="/about" role="menuitem" onClick={close} className={menuItemClass}>
             About
           </Link>
+          <div className="-mx-1 my-1 h-px bg-border" />
+          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground opacity-70">
+            Settings
+          </div>
+          <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+            <label htmlFor="offline-mode-switch" className="flex items-center gap-2 text-sm text-foreground">
+              <OfflineIcon className="size-4 text-muted-foreground" />
+              Offline mode
+            </label>
+            <Switch id="offline-mode-switch" checked={offlineMode} onCheckedChange={setOfflineMode} />
+          </div>
           {user ? (
             <>
               <div className="-mx-1 my-1 h-px bg-border" />

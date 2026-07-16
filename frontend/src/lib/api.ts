@@ -10,6 +10,28 @@ export function setCsrfToken(token: string) {
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
+/** The request never reached the server (offline, DNS failure, timeout, etc). */
+export class NetworkError extends Error {
+  constructor(cause: unknown) {
+    super('Network request failed')
+    this.name = 'NetworkError'
+    this.cause = cause
+  }
+}
+
+/** The server responded, but with a non-2xx status. */
+export class ApiError extends Error {
+  status: number
+  body: unknown
+
+  constructor(status: number, statusText: string, body: unknown) {
+    super((body as { detail?: string })?.detail ?? `Request failed: ${status} ${statusText}`)
+    this.name = 'ApiError'
+    this.status = status
+    this.body = body
+  }
+}
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? 'GET').toUpperCase()
   const headers = new Headers(init.headers)
@@ -21,16 +43,21 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     headers.set('X-CSRFToken', csrfToken)
   }
 
-  const response = await fetch(new URL(path, API_BASE_URL), {
-    ...init,
-    method,
-    headers,
-    credentials: 'include',
-  })
+  let response: Response
+  try {
+    response = await fetch(new URL(path, API_BASE_URL), {
+      ...init,
+      method,
+      headers,
+      credentials: 'include',
+    })
+  } catch (error) {
+    throw new NetworkError(error)
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => null)
-    throw new Error(body?.detail ?? `Request failed: ${response.status} ${response.statusText}`)
+    throw new ApiError(response.status, response.statusText, body)
   }
 
   if (response.status === 204) {

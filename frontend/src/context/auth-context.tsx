@@ -1,8 +1,30 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 
 import * as authApi from '@/lib/auth-api'
+import { getStored, removeStored, setStored } from '@/lib/local-store'
+import { isOfflineMode, useOfflineMode } from '@/lib/offline-mode'
+import { onReauthenticated } from '@/lib/sync-queue'
 import type { AuthSettings, AuthUser } from '@/types/auth'
 import type { LanguageCode } from '@/types/word'
+
+const AUTH_SNAPSHOT_KEY = 'auth-snapshot-v1'
+
+interface AuthSnapshot {
+  user: AuthUser | null
+  settings: AuthSettings | null
+}
+
+function loadAuthSnapshot(): AuthSnapshot {
+  return getStored<AuthSnapshot>(AUTH_SNAPSHOT_KEY, { user: null, settings: null })
+}
+
+function saveAuthSnapshot(user: AuthUser | null, settings: AuthSettings | null) {
+  if (user) {
+    setStored<AuthSnapshot>(AUTH_SNAPSHOT_KEY, { user, settings })
+  } else {
+    removeStored(AUTH_SNAPSHOT_KEY)
+  }
+}
 
 interface AuthContextValue {
   user: AuthUser | null
@@ -17,36 +39,53 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [settings, setSettings] = useState<AuthSettings | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(() => loadAuthSnapshot().user)
+  const [settings, setSettings] = useState<AuthSettings | null>(() => loadAuthSnapshot().settings)
   const [status, setStatus] = useState<'loading' | 'ready'>('loading')
+  const offlineMode = useOfflineMode()
 
-  useEffect(() => {
-    authApi
-      .getMe()
-      .then((me) => {
-        setUser(me.user)
-        setSettings(me.settings)
-      })
-      .finally(() => setStatus('ready'))
+  const checkSession = useCallback(async () => {
+    if (isOfflineMode()) {
+      setStatus('ready')
+      return
+    }
+    try {
+      const me = await authApi.getMe()
+      setUser(me.user)
+      setSettings(me.settings)
+      saveAuthSnapshot(me.user, me.settings)
+      if (me.user) onReauthenticated()
+    } finally {
+      setStatus('ready')
+    }
   }, [])
+
+  // Runs on mount, and again whenever offline mode is turned back off, since
+  // a real network call couldn't have run (or gone stale) while it was on.
+  useEffect(() => {
+    checkSession()
+  }, [offlineMode, checkSession])
 
   const register = useCallback(async (email: string, password: string) => {
     const response = await authApi.register(email, password)
     setUser(response.user)
     setSettings(response.settings)
+    saveAuthSnapshot(response.user, response.settings)
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await authApi.login(email, password)
     setUser(response.user)
     setSettings(response.settings)
+    saveAuthSnapshot(response.user, response.settings)
+    onReauthenticated()
   }, [])
 
   const logout = useCallback(async () => {
     await authApi.logout()
     setUser(null)
     setSettings(null)
+    saveAuthSnapshot(null, null)
   }, [])
 
   const setLanguageSetting = useCallback(async (language: LanguageCode) => {
